@@ -1,0 +1,60 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Pemohon" as Pemohon
+actor "Petugas alur pinjaman" as PetugasPinjam
+actor "Petugas alur stok" as PetugasStok
+actor "Administrator" as Admin
+
+rectangle "TanggapEquip" {
+  usecase "Masuk dan keluar" as UC01
+  usecase "Pantau ringkasan" as UC02
+  usecase "Lihat katalog dan scan SKU" as UC12
+  usecase "Ajukan pinjaman" as UC05
+  usecase "Putuskan pinjaman" as UC06
+  usecase "Serahkan / terima kembali alat" as UC07
+  usecase "Ajukan permintaan" as UC08
+  usecase "Putuskan permintaan" as UC09
+  usecase "Penuhi permintaan" as UC10
+  usecase "Catat mutasi stok" as UC11
+  usecase "Kelola jenis dan lokasi" as UC03
+  usecase "Kelola barang dan label" as UC04
+  usecase "Kelola akun, role, izin" as UC13
+}
+
+Pemohon --> UC01
+Pemohon --> UC02
+Pemohon --> UC12
+Pemohon --> UC05
+Pemohon --> UC08
+
+PetugasPinjam --> UC01
+PetugasPinjam --> UC02
+PetugasPinjam --> UC12
+PetugasPinjam --> UC05
+PetugasPinjam --> UC06
+PetugasPinjam --> UC07
+
+PetugasStok --> UC01
+PetugasStok --> UC02
+PetugasStok --> UC12
+PetugasStok --> UC08
+PetugasStok --> UC09
+PetugasStok --> UC10
+PetugasStok --> UC11
+
+Admin --> UC01
+Admin --> UC02
+Admin --> UC12
+Admin --> UC03
+Admin --> UC04
+Admin --> UC05
+Admin --> UC06
+Admin --> UC07
+Admin --> UC08
+Admin --> UC09
+Admin --> UC10
+Admin --> UC11
+Admin --> UC13
+@enduml
