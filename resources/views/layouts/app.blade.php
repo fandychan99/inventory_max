@@ -23,7 +23,7 @@
         <div class="sidebar-brand"><a href="{{ route('dashboard') }}" class="brand-link text-decoration-none"><img class="brand-logo" src="{{ asset('logo.jpeg') }}" alt="Logo TanggapEquip"><span class="brand-text fw-semibold ms-2">{{ config('app.name') }}</span></a></div>
         <div class="sidebar-wrapper"><nav class="mt-3"><ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu">
             @can('dashboard.view')<li class="nav-item"><a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="nav-icon bi bi-grid-1x2"></i><p>Ringkasan</p></a></li>@endcan
-            @canany(['items.view', 'stock.adjust', 'loans.handover', 'requests.fulfill'])<li class="nav-item"><a href="{{ route('scan.index') }}" class="nav-link {{ request()->routeIs('scan.*') ? 'active' : '' }}"><i class="nav-icon bi bi-upc-scan"></i><p>Scan barang</p></a></li>@endcanany
+            @canany(['items.view', 'stock.adjust', 'loans.handover', 'requests.fulfill', 'checks.view', 'checks.perform'])<li class="nav-item"><a href="{{ route('scan.index') }}" class="nav-link {{ request()->routeIs('scan.*') ? 'active' : '' }}"><i class="nav-icon bi bi-upc-scan"></i><p>Scan barang / lokasi</p></a></li>@endcanany
             @can('items.view')
                 <li class="nav-header">LOKASI · KATALOG</li>
                 @foreach($navigationLocations as $navLocation)
@@ -33,6 +33,7 @@
             <li class="nav-header">TRANSAKSI</li>
             @canany(['loans.create', 'loans.view-all'])<li class="nav-item"><a href="{{ route('loans.index') }}" class="nav-link {{ request()->routeIs('loans.*') ? 'active' : '' }}"><i class="nav-icon bi bi-arrow-left-right"></i><p>Peminjaman</p></a></li>@endcanany
             @canany(['requests.create', 'requests.view-all'])<li class="nav-item"><a href="{{ route('requests.index') }}" class="nav-link {{ request()->routeIs('requests.*') ? 'active' : '' }}"><i class="nav-icon bi bi-clipboard-check"></i><p>Permintaan</p></a></li>@endcanany
+            @canany(['checks.view', 'checks.perform'])<li class="nav-item"><a href="{{ route('inspections.index') }}" class="nav-link {{ request()->routeIs('inspections.*') ? 'active' : '' }}"><i class="nav-icon bi bi-check2-square"></i><p>Pengecekan</p></a></li>@endcanany
             @canany(['access.manage', 'locations.manage'])<li class="nav-header">ADMINISTRASI</li>@endcanany
             @can('locations.manage')<li class="nav-item"><a href="{{ route('locations.index') }}" class="nav-link {{ request()->routeIs('locations.*', 'location-types.*') ? 'active' : '' }}"><i class="nav-icon bi bi-geo-alt"></i><p>Lokasi & jenis</p></a></li>@endcan
             @can('access.manage')<li class="nav-item"><a href="{{ route('access.index') }}" class="nav-link {{ request()->routeIs('access.*') ? 'active' : '' }}"><i class="nav-icon bi bi-person-lock"></i><p>Role & akses</p></a></li>@endcan

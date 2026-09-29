@@ -5,6 +5,7 @@ skinparam packageStyle rectangle
 actor "Pemohon" as Pemohon
 actor "Petugas alur pinjaman" as PetugasPinjam
 actor "Petugas alur stok" as PetugasStok
+actor "Petugas pemeriksaan" as PetugasCek
 actor "Administrator" as Admin
 
 rectangle "TanggapEquip" {
@@ -21,6 +22,10 @@ rectangle "TanggapEquip" {
   usecase "Kelola jenis dan lokasi" as UC03
   usecase "Kelola barang dan label" as UC04
   usecase "Kelola akun, role, izin" as UC13
+  usecase "Catat dan lihat pengecekan" as UC14
+  usecase "Cetak barcode lokasi" as UC15
+  usecase "Unduh data stok XLSX" as UC16
+  usecase "Arsipkan / pulihkan lokasi dan jenis" as UC17
 }
 
 Pemohon --> UC01
@@ -43,6 +48,13 @@ PetugasStok --> UC08
 PetugasStok --> UC09
 PetugasStok --> UC10
 PetugasStok --> UC11
+PetugasStok --> UC16
+
+PetugasCek --> UC01
+PetugasCek --> UC02
+PetugasCek --> UC12
+PetugasCek --> UC14
+PetugasCek --> UC15
 
 Admin --> UC01
 Admin --> UC02
@@ -57,4 +69,8 @@ Admin --> UC09
 Admin --> UC10
 Admin --> UC11
 Admin --> UC13
+Admin --> UC14
+Admin --> UC15
+Admin --> UC16
+Admin --> UC17
 @enduml

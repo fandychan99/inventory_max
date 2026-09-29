@@ -1,9 +1,9 @@
 @extends('layouts.app')
 @section('title', 'Scan barang')
 @section('content')
-<div class="page-head"><div><div class="page-eyebrow">OPERASIONAL · PEMINDAIAN</div><h1 class="page-title">Scan barang</h1><p class="page-subtitle">Gunakan scanner USB/Bluetooth yang mengetik kode lalu Enter, atau aktifkan kamera untuk membaca label.</p></div></div>
+<div class="page-head"><div><div class="page-eyebrow">OPERASIONAL · PEMINDAIAN</div><h1 class="page-title">Scan barang / lokasi</h1><p class="page-subtitle">Scan barcode barang untuk transaksi atau barcode lokasi untuk membuka seluruh checklist peralatan.</p></div></div>
 <div class="row g-3 align-items-start" data-scan-page>
-    <div class="col-xl-5"><div class="surface"><div class="surface-head"><h2>Baca kode barang</h2></div><div class="surface-body">
+    <div class="col-xl-5"><div class="surface"><div class="surface-head"><h2>Baca kode</h2></div><div class="surface-body">
         <form action="{{ route('scan.index') }}" method="get" id="scan-form"><label class="form-label" for="scan-code">Kode pada label</label><div class="input-group"><input id="scan-code" name="code" class="form-control form-control-lg" value="{{ $code }}" placeholder="Arahkan scanner ke label" maxlength="80" autocomplete="off" required autofocus><button class="btn btn-primary" type="submit">Cari</button></div><p class="form-hint mt-2 mb-0">Scanner biasanya mengirim Enter otomatis. Jika tidak, tekan tombol Cari.</p></form>
         <div class="scan-divider"><span>ATAU</span></div>
         <div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary" id="camera-start"><i class="bi bi-camera me-1"></i> Buka kamera</button><button type="button" class="btn btn-outline-secondary d-none" id="camera-stop">Tutup kamera</button></div>
@@ -11,7 +11,7 @@
         <div id="camera-reader" class="scanner-reader mt-3" aria-label="Pratinjau kamera pemindai"></div>
     </div></div></div>
     <div class="col-xl-7">
-        @if($code !== '' && !$item)<div class="surface"><div class="surface-body"><div class="page-eyebrow">KODE TIDAK DITEMUKAN</div><h2 class="h5">Tidak ada barang untuk “{{ $code }}”</h2><p class="text-secondary mb-0">Periksa kode SKU pada katalog atau scan ulang label yang benar.</p></div></div>
+        @if($code !== '' && !$item)<div class="surface"><div class="surface-body"><div class="page-eyebrow">KODE TIDAK DITEMUKAN</div><h2 class="h5">Tidak ada barang atau lokasi untuk “{{ $code }}”</h2><p class="text-secondary mb-0">Periksa kode barang atau barcode lokasi, lalu scan ulang.</p></div></div>
         @elseif($item)
         <div class="surface mb-3"><div class="surface-head"><h2>Barang ditemukan</h2><span class="badge-status">{{ $item->location->name }}</span></div><div class="surface-body"><div class="page-eyebrow">{{ $item->sku }}</div><h2 class="scan-item-name">{{ $item->name }}</h2><div class="d-flex flex-wrap gap-4 mt-3"><div><div class="stat-label">{{ $item->location->workflow === 'loan' ? 'Tersedia' : 'Stok saat ini' }}</div><strong class="fs-4">{{ $item->available }}</strong> {{ $item->unit }}</div><div><div class="stat-label">Status katalog</div><strong>{{ $item->is_active ? 'Aktif' : 'Nonaktif' }}</strong></div></div>@can('items.view')<a class="btn btn-sm btn-outline-secondary mt-3" href="{{ route('items.label', $item) }}">Cetak label</a>@endcan</div></div>
         @if($item->location->workflow === 'loan')

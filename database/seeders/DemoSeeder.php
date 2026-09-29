@@ -8,6 +8,7 @@ use App\Models\Location;
 use App\Models\LocationType;
 use App\Models\StockRequest;
 use App\Models\User;
+use App\Services\InspectionWorkflow;
 use App\Services\InventoryWorkflow;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
@@ -31,6 +32,7 @@ class DemoSeeder extends Seeder
             $admin = $this->demoUser('Demo Administrator', 'demo.admin@tanggapequip.test', 'Administrator');
             $loanOfficer = $this->demoUser('Demo Petugas Pinjaman', 'demo.pinjam@tanggapequip.test', 'Petugas Gudang A');
             $stockOfficer = $this->demoUser('Demo Petugas Stok', 'demo.stok@tanggapequip.test', 'Petugas Gudang B');
+            $inspectionOfficer = $this->demoUser('Demo Petugas Pemeriksaan', 'demo.cek@tanggapequip.test', 'Petugas Pemeriksaan');
             $applicant = $this->demoUser('Demo Pemohon', 'demo.pemohon@tanggapequip.test', 'Pemohon');
 
             $warehouseType = LocationType::firstOrCreate(['name' => 'Gudang']);
@@ -49,6 +51,10 @@ class DemoSeeder extends Seeder
             $cabinet = Location::firstOrCreate(['name' => 'DEMO Lemari P3K'], [
                 'location_type_id' => $cabinetType->id, 'workflow' => Location::WORKFLOW_STOCK, 'is_active' => true,
             ]);
+            $patrolTruck = Location::firstOrCreate(['name' => 'DEMO Truk Patroli'], [
+                'location_type_id' => $truckType->id, 'workflow' => Location::WORKFLOW_CHECKLIST,
+                'scan_code' => 'DEMO-TRUCK-PATROL-01', 'is_active' => true,
+            ]);
 
             $drill = $this->item($warehouseA, 'DEMO-A-BOR', 'Bor listrik', 'unit', 4, 0, $stockOfficer, $workflow);
             $ladder = $this->item($warehouseA, 'DEMO-A-TANGGA', 'Tangga lipat', 'unit', 3, 0, $stockOfficer, $workflow);
@@ -61,6 +67,17 @@ class DemoSeeder extends Seeder
             $bandage = $this->item($cabinet, 'DEMO-L-PERBAN', 'Perban elastis', 'roll', 60, 15, $stockOfficer, $workflow);
             $gauze = $this->item($cabinet, 'DEMO-L-KASA', 'Kasa steril', 'pak', 100, 20, $stockOfficer, $workflow);
             $plaster = $this->item($cabinet, 'DEMO-L-PLESTER', 'Plester luka', 'lembar', 200, 40, $stockOfficer, $workflow);
+
+            $patrolEquipment = [
+                ['APAR E-20', 1], ['Selang Ø 1½ inci', 2], ['Nozzle AWG', 1],
+                ['Y Piece', 1], ['Inductor In Line 450', 1], ['Pick Up Tube', 1],
+                ['Hydro Shield', 1], ['Kunci F Besar', 1], ['Kunci F Kecil', 1],
+                ['Kunci Kopling', 2], ['Kunci Trimo', 1], ['Palu Karet Besar', 1],
+                ['Cross Line', 1],
+            ];
+            foreach ($patrolEquipment as $index => [$name, $quantity]) {
+                $this->item($patrolTruck, sprintf('DEMO-PK-%02d', $index + 1), $name, 'unit', $quantity, 0, $inspectionOfficer, $workflow);
+            }
 
             $this->loan($drill, $applicant, 1, 'Demo: pengecekan instalasi', today()->addDay(), today()->addDays(3), [], $loanOfficer, $workflow);
             $this->loan($ladder, $applicant, 1, 'Demo: perawatan lampu', today(), today()->addDays(2), ['approve'], $loanOfficer, $workflow);
@@ -77,6 +94,28 @@ class DemoSeeder extends Seeder
             if ($gauze->wasRecentlyCreated) {
                 $workflow->adjustStock($gauze, 5, 'Demo: penerimaan tambahan', $stockOfficer, 'in');
                 $workflow->adjustStock($gauze, -2, 'Demo: pemakaian langsung', $stockOfficer, 'out');
+            }
+
+            $inspectionWorkflow = app(InspectionWorkflow::class);
+            $inspectionItems = $patrolTruck->items()->where('is_active', true)->get();
+            if (! $patrolTruck->inspections()->where('note', 'Demo: pemeriksaan lengkap kemarin.')->exists()) {
+                $inspection = $inspectionWorkflow->record($patrolTruck, $inspectionOfficer, $inspectionItems->mapWithKeys(fn ($item) => [
+                    $item->id => ['actual_quantity' => $item->quantity, 'condition' => 'good', 'note' => ''],
+                ])->all(), 'Demo: pemeriksaan lengkap kemarin.');
+                $inspection->forceFill([
+                    'inspected_on' => today()->subDay(), 'created_at' => now()->subDay(), 'updated_at' => now()->subDay(),
+                ])->save();
+            }
+            if (! $patrolTruck->inspections()->where('note', 'Demo: satu selang perlu dicari.')->exists()) {
+                $inspectionWorkflow->record($patrolTruck, $inspectionOfficer, $inspectionItems->mapWithKeys(function ($item) {
+                    $isHose = $item->sku === 'DEMO-PK-02';
+
+                    return [$item->id => [
+                        'actual_quantity' => $isHose ? 1 : $item->quantity,
+                        'condition' => 'good',
+                        'note' => $isHose ? 'Satu selang belum ditemukan di truk.' : '',
+                    ]];
+                })->all(), 'Demo: satu selang perlu dicari.');
             }
         });
     }
@@ -95,7 +134,7 @@ class DemoSeeder extends Seeder
 
     private function item(Location $location, string $sku, string $name, string $unit, int $quantity, int $minimumStock, User $actor, InventoryWorkflow $workflow): Item
     {
-        if ($location->workflow !== Location::WORKFLOW_LOAN && $location->workflow !== Location::WORKFLOW_STOCK) {
+        if (! in_array($location->workflow, [Location::WORKFLOW_LOAN, Location::WORKFLOW_STOCK, Location::WORKFLOW_CHECKLIST], true)) {
             throw new RuntimeException("Alur lokasi {$location->name} tidak didukung oleh data demo.");
         }
 
@@ -103,7 +142,7 @@ class DemoSeeder extends Seeder
             'location_id' => $location->id,
             'name' => $name,
             'unit' => $unit,
-            'quantity' => $location->workflow === Location::WORKFLOW_LOAN ? $quantity : 0,
+            'quantity' => $location->workflow === Location::WORKFLOW_STOCK ? 0 : $quantity,
             'minimum_stock' => $minimumStock,
             'description' => 'Data contoh TanggapEquip untuk simulasi operasional.',
             'is_active' => true,

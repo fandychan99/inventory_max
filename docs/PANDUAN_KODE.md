@@ -30,6 +30,8 @@ Untuk skenario contoh, jalankan `php artisan db:seed --class=DemoSeeder` setelah
 | `routes/web.php` | URL, nama route, middleware autentikasi, izin, dan pembatasan laju. |
 | `app/Http/Controllers/` | Validasi masukan, otorisasi tambahan, query untuk halaman, redirect. |
 | `app/Services/InventoryWorkflow.php` | Transisi status, cek saldo/unit, transaksi database, mutasi. |
+| `app/Services/InspectionWorkflow.php` | Validasi checklist lengkap, penguncian lokasi/item, snapshot hasil pemeriksaan. |
+| `app/Services/StockWorkbook.php` | Membuat berkas XLSX stok dengan nilai teks yang tidak dieksekusi sebagai rumus. |
 | `app/Models/` | Relasi Eloquent dan perhitungan `Item::available`. |
 | `database/migrations/` | Skema pengguna, izin Spatie, inventaris, dan migrasi ke lokasi dinamis. |
 | `database/seeders/DatabaseSeeder.php` | Daftar izin, role bawaan, serta akun awal dari konfigurasi. |
@@ -42,7 +44,7 @@ Alur permintaan HTTP: `routes/web.php` → middleware `auth`/`permission`/`throt
 
 ## Model dan data
 
-`LocationType` memiliki banyak `Location`; setiap `Location` punya satu `workflow` (`loan` atau `stock`) dan banyak `Item`. SKU `Item` unik secara global. `Loan` dan `StockRequest` masing-masing menunjuk satu item serta satu pemohon. Keduanya menyimpan pelaku dan waktu persetujuan/tindakan. `StockMovement` mencatat perubahan stok, saldo akhir, petugas, jenis, catatan, dan nomor permintaan bila pengeluaran berasal dari permintaan. User terhubung ke role dan permission melalui tabel Spatie.
+`LocationType` memiliki banyak `Location`; setiap `Location` punya satu `workflow` (`loan`, `stock`, atau `checklist`) dan banyak `Item`. Jenis dan lokasi memiliki `archived_at` untuk menyembunyikannya tanpa memutus relasi riwayat. Lokasi checklist memiliki `scan_code` unik. SKU `Item` unik secara global dan tidak boleh sama dengan kode lokasi. `Loan` dan `StockRequest` masing-masing menunjuk satu item serta satu pemohon. Keduanya menyimpan pelaku dan waktu persetujuan/tindakan. `StockMovement` mencatat perubahan stok, saldo akhir, petugas, jenis, catatan, dan nomor permintaan bila pengeluaran berasal dari permintaan. `Inspection` menunjuk lokasi, petugas, tanggal, dan status; `InspectionEntry` menyimpan snapshot SKU, nama, satuan, jumlah standar, jumlah ditemukan, kondisi, dan catatan setiap item. User terhubung ke role dan permission melalui tabel Spatie.
 
 Migrasi awal membuat tabel inventaris dengan kolom `warehouse` A/B. Migrasi `2026_09_27_020000_create_locations_and_migrate_items.php` membuat jenis Gudang/Truk/Lemari, lokasi Gudang A (`loan`) dan Gudang B (`stock`), memetakan barang lama, lalu mengganti `warehouse` dengan `location_id`. Jangan mengedit migrasi lama pada sistem yang sudah terpasang; buat migrasi baru untuk perubahan skema berikutnya. `down()` migrasi lokasi menolak rollback jika lokasi sudah berubah atau bertambah.
 
@@ -50,6 +52,7 @@ Migrasi awal membuat tabel inventaris dengan kolom `warehouse` A/B. Migrasi `202
 
 - Alur `loan`: `items.quantity` adalah total alat; `Item::available` = total dikurangi jumlah seluruh loan berstatus `issued`. Penyerahan tidak mengubah `items.quantity` dan tidak membuat `StockMovement`.
 - Alur `stock`: `items.quantity` adalah saldo tersisa; barang baru dibuat dengan saldo 0. Stok awal/koreksi dicatat melalui `adjustStock()`. Pemenuhan permintaan mengurangi saldo dan membuat satu `StockMovement` bertipe `issued`.
+- Alur `checklist`: `items.quantity` adalah jumlah standar peralatan di lokasi. Pengecekan mencatat jumlah ditemukan dan kondisi sebagai snapshot, tanpa mengubah `items.quantity` atau membuat mutasi stok.
 - `adjustStock()` mengizinkan tipe `adjustment`, `in`, `out`; perubahan 0, arah perubahan yang tidak sesuai, atau saldo negatif ditolak.
 
 ## Aturan alur transaksi
@@ -58,14 +61,19 @@ Migrasi awal membuat tabel inventaris dengan kolom `warehouse` A/B. Migrasi `202
 | --- | --- | --- |
 | Pinjaman | `submitted → approved → issued → returned` atau `submitted → rejected` | Penolakan memerlukan alasan. Ketersediaan dicek saat `issue`. |
 | Permintaan stok | `submitted → approved → fulfilled` atau `submitted → rejected` | Penolakan memerlukan alasan. Saldo dicek saat `fulfill`. |
+| Pengecekan | Setiap pengiriman menghasilkan `Inspection` baru berstatus `ok` atau `attention` | Semua item aktif wajib tercantum; selisih jumlah atau kerusakan memerlukan catatan per item. |
 
 `InventoryWorkflow` memakai `DB::transaction()` dan `lockForUpdate()` pada transaksi serta item sebelum perubahan. Transisi yang berulang atau melompati status menghasilkan kesalahan validasi. Controller hanya menerima aksi yang dikenal dan memeriksa izin aksi (`loans.approve`, `loans.handover`, `requests.approve`, `requests.fulfill`). Menambah status/aksi baru berarti memperbarui service, controller, tampilan, label status, dan tes secara bersamaan.
 
-Form pengajuan hanya menerima item aktif dari lokasi aktif dengan alur yang cocok. Pada pinjaman, `needed_from` tidak boleh sebelum hari ini dan `due_on` tidak boleh sebelum `needed_from`. Penolakan wajib memakai `note`. Penambahan item stok memaksa saldo awal 0. Form edit barang stok tidak mengubah saldo; hanya mutasi yang boleh mengubahnya. Total alat pinjam kembali tidak dapat diturunkan di bawah unit yang masih `issued`.
+Form pengajuan hanya menerima item aktif dari lokasi aktif yang tidak diarsipkan dengan alur yang cocok. Pada pinjaman, `needed_from` tidak boleh sebelum hari ini dan `due_on` tidak boleh sebelum `needed_from`. Penolakan wajib memakai `note`. Penambahan item stok memaksa saldo awal 0. Perubahan saldo pada form edit memerlukan `stock.adjust` dan alasan; `ItemController` memanggil `adjustStock()` agar mutasi tetap tercatat dalam transaksi database. Total alat pinjam kembali tidak dapat diturunkan di bawah unit yang masih `issued`. `InspectionWorkflow::record()` mengunci lokasi dan item, mencocokkan seluruh ID item aktif, lalu menyimpan pemeriksaan dan entry dalam satu transaksi. Beberapa pemeriksaan pada hari yang sama diizinkan sebagai catatan terpisah.
 
 ## Hak akses dan pembatasan laju
 
-Seeder mendefinisikan izin `dashboard.view`, `items.view`, `items.manage`, `stock.adjust`, `loans.create`, `loans.view-all`, `loans.approve`, `loans.handover`, `requests.create`, `requests.view-all`, `requests.approve`, `requests.fulfill`, `access.manage`, dan `locations.manage`. Route memakai middleware Spatie; daftar/detail pinjaman dan permintaan juga membatasi data ke pemohon sendiri bila tidak memiliki izin `view-all`. Dashboard menggunakan batas tampilan yang sama untuk transaksi, sedangkan indikator stok menipis dihitung dari seluruh barang stok aktif.
+Seeder mendefinisikan izin `dashboard.view`, `items.view`, `items.manage`, `stock.adjust`, `stock.export`, `loans.create`, `loans.view-all`, `loans.approve`, `loans.handover`, `requests.create`, `requests.view-all`, `requests.approve`, `requests.fulfill`, `checks.view`, `checks.perform`, `access.manage`, dan `locations.manage`. Route memakai middleware Spatie; daftar/detail pinjaman dan permintaan juga membatasi data ke pemohon sendiri bila tidak memiliki izin `view-all`. Dashboard menggunakan batas tampilan yang sama untuk transaksi, sedangkan indikator stok menipis dihitung dari barang stok aktif pada lokasi yang tidak diarsipkan.
+
+`StockExportController` membatasi ekspor pada lokasi alur `stock` yang tidak diarsipkan, menerima filter lokasi dan pencarian, lalu membaca seluruh baris dengan `lazyById()`. `StockWorkbook` menulis nilai teks sebagai `inlineStr` pada XLSX supaya nama/SKU yang diawali tanda rumus tidak dieksekusi. File sementara dihapus setelah respons unduhan. Ekspor memerlukan `items.view` dan `stock.export` serta limiter operasi.
+
+Arsip lokasi mengisi `archived_at` dan membuat `is_active=false`. `scopeVisible()` dipakai pada katalog, navigasi, ringkasan, scan, pilihan pengajuan baru, dan ekspor. Riwayat transaksi tetap menunjuk lokasi asal; transaksi yang sudah berjalan masih dapat diselesaikan melalui detailnya. Jenis hanya boleh diarsipkan bila semua lokasinya sudah diarsipkan. Pemulihan jenis dilakukan sebelum lokasi; lokasi yang dipulihkan tetap nonaktif sampai petugas mengaktifkannya lagi.
 
 `AccessController` menyediakan UI untuk membuat/mengubah role dan pengguna. Role Administrator dilindungi dari perubahan melalui UI dan disinkronkan dengan semua izin saat seeder dijalankan lagi. Role bawaan lain hanya diberi izin awal saat pertama dibuat, sehingga penyesuaian manual tetap terjaga. Izin sistem ditentukan oleh kode/seeder; UI mengatur pemberian izin yang sudah terdaftar, bukan menciptakan nama izin baru.
 
@@ -73,11 +81,11 @@ Seeder mendefinisikan izin `dashboard.view`, `items.view`, `items.manage`, `stoc
 
 ## Scan dan label
 
-`resources/js/app.js` memuat modul `scan.js` dan `label.js` hanya bila elemen halaman terkait ada. `scan.js` memanggil `html5-qrcode` setelah pengguna menekan **Buka kamera**, memilih kamera belakang bila ada, menerima Code 128/QR berisi SKU, memvalidasi bentuk SKU, lalu mengirim form GET `/scan?code=...`. Scanner HID USB/Bluetooth memakai input yang sama dan dapat mengirim Enter. Kamera memerlukan secure context/HTTPS pada HP. Pemindaian hanya mencari `Item` berdasarkan SKU; tindakan persediaan/peminjaman tetap memerlukan POST dengan autentikasi, CSRF, izin, dan validasi server. `label.js` menggambar Code 128 pada halaman label dan memanggil `window.print()`.
+`resources/js/app.js` memuat modul `scan.js` dan `label.js` hanya bila elemen halaman terkait ada. `scan.js` memanggil `html5-qrcode` setelah pengguna menekan **Buka kamera**, memilih kamera belakang bila ada, menerima Code 128/QR berisi kode, memvalidasi bentuknya, lalu mengirim form GET `/scan?code=...`. Scanner HID USB/Bluetooth memakai input yang sama dan dapat mengirim Enter. Kamera memerlukan secure context/HTTPS pada HP. `ScanController` mencari `Location::scan_code` lebih dahulu, kemudian `Item::sku`; kode lokasi checklist membuka seluruh daftar peralatan. Tindakan tetap memerlukan POST dengan autentikasi, CSRF, izin, dan validasi server. `label.js` menggambar Code 128 pada halaman label barang maupun lokasi dan memanggil `window.print()`.
 
 ## Pola perubahan fitur
 
-1. Tentukan apakah fitur berlaku untuk `loan`, `stock`, atau keduanya. Jangan menyimpulkan alur dari nama lokasi; gunakan `Location::workflow`.
+1. Tentukan apakah fitur berlaku untuk `loan`, `stock`, atau `checklist`. Jangan menyimpulkan alur dari nama lokasi; gunakan `Location::workflow`.
 2. Bila perlu data baru, buat migrasi, relasi/model, dan aturan validasi. Pertahankan jejak `StockMovement` untuk perubahan saldo stok.
 3. Tempatkan transisi atau perubahan saldo di `InventoryWorkflow`, bukan langsung di Blade atau JavaScript. Jaga transaksi dan penguncian item.
 4. Tambah izin di seeder dan middleware route, lalu tampilkan aksi dengan `@can`/`@canany`. Periksa akses objek dalam controller untuk detail milik pemohon.

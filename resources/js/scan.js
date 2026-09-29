@@ -76,7 +76,7 @@ startButton?.addEventListener('click', async () => {
                 if (handled) return;
                 const code = decodedText.trim();
                 if (!/^[A-Za-z0-9._/-]{1,80}$/.test(code)) {
-                    status.textContent = 'Kode terbaca, tetapi bukan SKU barang yang valid.';
+                    status.textContent = 'Kode terbaca, tetapi bukan kode barang atau lokasi yang valid.';
                     return;
                 }
                 handled = true;

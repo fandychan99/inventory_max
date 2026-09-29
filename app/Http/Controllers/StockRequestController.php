@@ -19,13 +19,13 @@ class StockRequestController extends Controller
             ->when($request->query('location'), fn ($q, $id) => $q->whereHas('item', fn ($items) => $items->where('location_id', $id)))
             ->latest()->paginate(15)->withQueryString();
 
-        return view('requests.index', ['requests' => $requests, 'locations' => Location::where('workflow', Location::WORKFLOW_STOCK)->orderBy('name')->get()]);
+        return view('requests.index', ['requests' => $requests, 'locations' => Location::visible()->where('workflow', Location::WORKFLOW_STOCK)->orderBy('name')->get()]);
     }
 
     public function create(): View
     {
         return view('requests.create', ['items' => Item::with('location')->where('is_active', true)
-            ->whereHas('location', fn ($q) => $q->where('workflow', Location::WORKFLOW_STOCK)->where('is_active', true))
+            ->whereHas('location', fn ($q) => $q->visible()->where('workflow', Location::WORKFLOW_STOCK)->where('is_active', true))
             ->orderBy('name')->get()]);
     }
 

@@ -9,6 +9,7 @@ flowchart LR
     applicant["Pemohon"]
     loanOfficer["Petugas alur pinjaman"]
     stockOfficer["Petugas alur stok"]
+    checkOfficer["Petugas pemeriksaan"]
     admin["Administrator"]
 
     subgraph system["TanggapEquip"]
@@ -25,12 +26,17 @@ flowchart LR
         locations(["Kelola jenis dan lokasi"])
         items(["Kelola barang dan label"])
         access(["Kelola pengguna, role, izin"])
+        inspect(["Catat dan lihat pengecekan"])
+        locationLabel(["Cetak barcode lokasi"])
+        exportStock(["Unduh data stok XLSX"])
+        archive(["Arsipkan dan pulihkan lokasi/jenis"])
     end
 
     applicant --> login & dashboard & catalog & applyLoan & applyStock
     loanOfficer --> login & dashboard & catalog & applyLoan & decideLoan & handover
-    stockOfficer --> login & dashboard & catalog & applyStock & decideStock & fulfill & adjust
-    admin --> login & dashboard & catalog & applyLoan & decideLoan & handover & applyStock & decideStock & fulfill & adjust & locations & items & access
+    stockOfficer --> login & dashboard & catalog & applyStock & decideStock & fulfill & adjust & exportStock
+    checkOfficer --> login & dashboard & catalog & inspect & locationLabel
+    admin --> login & dashboard & catalog & applyLoan & decideLoan & handover & applyStock & decideStock & fulfill & adjust & exportStock & locations & archive & items & access & inspect & locationLabel
 ```
 
 Diagram ini menunjukkan hubungan aktor dan use case. Role dapat diubah melalui Spatie; garis di atas merepresentasikan izin bawaan, bukan izin yang harus tetap pada nama role tersebut.
@@ -52,11 +58,14 @@ classDiagram
     }
     class LocationType {
         +name
+        +archived_at
     }
     class Location {
         +name
-        +workflow: loan|stock
+        +workflow: loan|stock|checklist
+        +scan_code
         +is_active
+        +archived_at
     }
     class Item {
         +sku
@@ -80,6 +89,21 @@ classDiagram
         +balance_after
         +type
     }
+    class Inspection {
+        +inspected_on
+        +status: ok|attention
+        +note
+    }
+    class InspectionEntry {
+        +item_sku
+        +expected_quantity
+        +actual_quantity
+        +condition
+        +note
+    }
+    class InspectionWorkflow {
+        +record()
+    }
     class InventoryWorkflow {
         +transitionLoan()
         +transitionRequest()
@@ -97,9 +121,15 @@ classDiagram
     User "1" --> "many" StockRequest : requests
     User "1" --> "many" StockMovement : records
     StockRequest "1" --> "0..1" StockMovement : source
+    Location "1" --> "many" Inspection : checkedAt
+    Inspection "1" --> "many" InspectionEntry : contains
+    Item "1" --> "many" InspectionEntry : snapshotOf
+    User "1" --> "many" Inspection : records
     InventoryWorkflow ..> Loan : transitions
     InventoryWorkflow ..> StockRequest : transitions
     InventoryWorkflow ..> StockMovement : creates
+    InspectionWorkflow ..> Inspection : creates
+    InspectionWorkflow ..> InspectionEntry : snapshots
 ```
 
 Relasi pelaku persetujuan, penyerahan, pengembalian, dan pemenuhan juga menunjuk `User` melalui kolom `approved_by`, `issued_by`, `returned_by`, atau `fulfilled_by`; garisnya disederhanakan agar diagram terbaca.
@@ -197,17 +227,43 @@ flowchart TD
     start([Buka Scan barang]) --> source{Sumber kode}
     source -->|Scanner USB/Bluetooth| input[Isi SKU lalu Enter atau Cari]
     source -->|Kamera HP HTTPS| camera[Buka kamera dan baca Code 128/QR]
-    input --> lookup[Cari Item berdasarkan SKU]
+    input --> lookup[Cari lokasi berdasarkan barcode atau Item berdasarkan SKU]
     camera --> lookup
-    lookup --> found{Item ditemukan?}
+    lookup --> found{Kode ditemukan?}
     found -->|Tidak| retry[Tampilkan kode tidak ditemukan]
     found -->|Ya| workflow{Alur lokasi}
     workflow -->|Pinjam kembali| loan[Perlihatkan pinjaman approved/issued]
     workflow -->|Permintaan stok| stock[Perlihatkan permintaan approved dan form mutasi]
+    workflow -->|Pengecekan| check[Perlihatkan semua item aktif dan jumlah standar]
     loan --> action[Pengguna memilih aksi sesuai izin]
     stock --> action
+    check --> action
     action --> post[POST divalidasi server]
-    post --> result([Status atau saldo diperbarui])
+    post --> result([Transaksi atau hasil pengecekan tersimpan])
 ```
 
-Scan adalah pencarian item. Tindakan pada hasil scan tetap mengikuti izin, urutan status, dan pemeriksaan saldo pada server. Rincian kondisi ada di [use case](USE_CASES.md) dan [panduan kode](PANDUAN_KODE.md).
+Scan adalah pencarian item atau lokasi. Tindakan pada hasil scan tetap mengikuti izin dan validasi server. Rincian kondisi ada di [use case](USE_CASES.md) dan [panduan kode](PANDUAN_KODE.md).
+
+## 8. Diagram urutan pengecekan lokasi
+
+```mermaid
+sequenceDiagram
+    actor Petugas
+    participant Scan as ScanController
+    participant Form as InspectionController
+    participant WF as InspectionWorkflow
+    participant DB as Database
+
+    Petugas->>Scan: Scan satu barcode truk
+    Scan->>DB: Cari Location.scan_code
+    Scan-->>Petugas: Buka checklist semua item aktif
+    Petugas->>Form: POST jumlah ditemukan, kondisi, catatan
+    Form->>WF: record(location, rows)
+    WF->>DB: Kunci lokasi dan item, cocokkan semua ID
+    alt data lengkap dan sah
+        WF->>DB: Simpan Inspection + InspectionEntry snapshot
+        DB-->>Petugas: Detail hasil dan status
+    else data berubah atau catatan wajib kosong
+        WF-->>Petugas: Kesalahan validasi
+    end
+```

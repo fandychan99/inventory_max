@@ -14,11 +14,22 @@ use Illuminate\View\View;
 
 class ScanController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $data = $request->validate(['code' => ['nullable', 'string', 'max:80']]);
         $code = trim($data['code'] ?? '');
-        $item = $code !== '' ? Item::with('location')->where('sku', $code)->first() : null;
+        $location = $code !== '' ? Location::visible()->where('workflow', Location::WORKFLOW_CHECKLIST)->where('scan_code', $code)->first() : null;
+        if ($location) {
+            abort_unless($request->user()->canAny(['checks.view', 'checks.perform']), 403);
+
+            return redirect()->route('inspections.create', $location);
+        }
+        $item = $code !== '' ? Item::with('location')->whereHas('location', fn ($query) => $query->visible())->where('sku', $code)->first() : null;
+        if ($item?->location->workflow === Location::WORKFLOW_CHECKLIST) {
+            abort_unless($request->user()->canAny(['checks.view', 'checks.perform']), 403);
+
+            return redirect()->route('inspections.create', $item->location);
+        }
 
         $loans = collect();
         $stockRequests = collect();

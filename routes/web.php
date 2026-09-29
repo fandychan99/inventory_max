@@ -3,11 +3,13 @@
 use App\Http\Controllers\AccessController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InspectionController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\LocationTypeController;
 use App\Http\Controllers\ScanController;
+use App\Http\Controllers\StockExportController;
 use App\Http\Controllers\StockRequestController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,16 +22,27 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->middleware('permission:dashboard.view')->name('dashboard');
-    Route::get('/scan', [ScanController::class, 'index'])->middleware(['permission:items.view|stock.adjust|loans.handover|requests.fulfill', 'throttle:scan'])->name('scan.index');
+    Route::get('/scan', [ScanController::class, 'index'])->middleware(['permission:items.view|stock.adjust|loans.handover|requests.fulfill|checks.view|checks.perform', 'throttle:scan'])->name('scan.index');
     Route::post('/scan/stock', [ScanController::class, 'moveStock'])->middleware(['permission:stock.adjust', 'throttle:operations'])->name('scan.stock');
 
     Route::get('/locations', [LocationController::class, 'index'])->middleware('permission:locations.manage')->name('locations.index');
     Route::post('/location-types', [LocationTypeController::class, 'store'])->middleware(['permission:locations.manage', 'throttle:operations'])->name('location-types.store');
     Route::put('/location-types/{locationType}', [LocationTypeController::class, 'update'])->middleware(['permission:locations.manage', 'throttle:operations'])->name('location-types.update');
+    Route::post('/location-types/{locationType}/archive', [LocationTypeController::class, 'archive'])->middleware(['permission:locations.manage', 'throttle:operations'])->name('location-types.archive');
+    Route::post('/location-types/{locationType}/restore', [LocationTypeController::class, 'restore'])->middleware(['permission:locations.manage', 'throttle:operations'])->name('location-types.restore');
     Route::post('/locations', [LocationController::class, 'store'])->middleware(['permission:locations.manage', 'throttle:operations'])->name('locations.store');
     Route::put('/locations/{location}', [LocationController::class, 'update'])->middleware(['permission:locations.manage', 'throttle:operations'])->name('locations.update');
+    Route::post('/locations/{location}/archive', [LocationController::class, 'archive'])->middleware(['permission:locations.manage', 'throttle:operations'])->name('locations.archive');
+    Route::post('/locations/{location}/restore', [LocationController::class, 'restore'])->middleware(['permission:locations.manage', 'throttle:operations'])->name('locations.restore');
+
+    Route::get('/inspections', [InspectionController::class, 'index'])->middleware('permission:checks.view|checks.perform')->name('inspections.index');
+    Route::get('/inspections/locations/{location}', [InspectionController::class, 'create'])->middleware('permission:checks.view|checks.perform')->name('inspections.create');
+    Route::post('/inspections/locations/{location}', [InspectionController::class, 'store'])->middleware(['permission:checks.perform', 'throttle:operations'])->name('inspections.store');
+    Route::get('/inspections/locations/{location}/label', [InspectionController::class, 'label'])->middleware('permission:checks.view|checks.perform|locations.manage')->name('inspections.label');
+    Route::get('/inspections/{inspection}', [InspectionController::class, 'show'])->middleware('permission:checks.view|checks.perform')->name('inspections.show');
 
     Route::get('/items', [ItemController::class, 'index'])->middleware('permission:items.view')->name('items.index');
+    Route::get('/items/export/stock', StockExportController::class)->middleware(['permission:items.view', 'permission:stock.export', 'throttle:operations'])->name('items.export-stock');
     Route::get('/items/create', [ItemController::class, 'create'])->middleware('permission:items.manage')->name('items.create');
     Route::post('/items', [ItemController::class, 'store'])->middleware(['permission:items.manage', 'throttle:operations'])->name('items.store');
     Route::get('/items/{item}/edit', [ItemController::class, 'edit'])->middleware('permission:items.manage')->name('items.edit');

@@ -64,6 +64,8 @@ body { background: var(--color-paper); color: var(--color-ink); font-family: var
 .form-label { font-weight: 600; font-size: .86rem; }
 .form-control, .form-select { border-radius: 2px; border-color: var(--color-line); }
 .form-hint { color: var(--color-muted); font-size: .8rem; }
+.checklist-row { border-bottom: 1px solid var(--color-line); }
+.checklist-row:last-of-type { border-bottom: 0; }
 .empty-state { padding: 2.5rem 1.2rem; text-align: center; color: var(--color-muted); }
 .empty-state i { display: block; font-size: 1.7rem; color: var(--color-accent); margin-bottom: .5rem; }
 .timeline-plain { list-style: none; padding: 0; margin: 0; }

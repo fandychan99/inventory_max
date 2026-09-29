@@ -37,7 +37,7 @@ class Item extends Model
 
     public function getAvailableAttribute(): int
     {
-        if ($this->location->workflow === Location::WORKFLOW_STOCK) {
+        if ($this->location->workflow !== Location::WORKFLOW_LOAN) {
             return $this->quantity;
         }
 

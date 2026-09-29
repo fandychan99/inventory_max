@@ -6,10 +6,11 @@
     <span class="text-secondary small">{{ now()->translatedFormat('d F Y') }}</span>
 </div>
 <div class="row g-3 mb-4">
-    <div class="col-6 col-xl-3"><div class="surface stat stat-emphasis"><div class="stat-label">Sedang dipinjam</div><div class="stat-value">{{ $activeLoans }}</div><div class="stat-foot">Semua lokasi pinjam kembali</div></div></div>
-    <div class="col-6 col-xl-3"><div class="surface stat"><div class="stat-label">Terlambat kembali</div><div class="stat-value">{{ $overdueLoans }}</div><div class="stat-foot">Perlu tindak lanjut</div></div></div>
-    <div class="col-6 col-xl-3"><div class="surface stat"><div class="stat-label">Permintaan menunggu</div><div class="stat-value">{{ $pendingRequests }}</div><div class="stat-foot">Semua lokasi permintaan stok</div></div></div>
-    <div class="col-6 col-xl-3"><div class="surface stat"><div class="stat-label">Stok menipis</div><div class="stat-value">{{ $lowStock }}</div><div class="stat-foot">Pada atau di bawah minimum</div></div></div>
+    <div class="col-6 col-xl"><div class="surface stat stat-emphasis"><div class="stat-label">Sedang dipinjam</div><div class="stat-value">{{ $activeLoans }}</div><div class="stat-foot">Semua lokasi pinjam kembali</div></div></div>
+    <div class="col-6 col-xl"><div class="surface stat"><div class="stat-label">Terlambat kembali</div><div class="stat-value">{{ $overdueLoans }}</div><div class="stat-foot">Perlu tindak lanjut</div></div></div>
+    <div class="col-6 col-xl"><div class="surface stat"><div class="stat-label">Permintaan menunggu</div><div class="stat-value">{{ $pendingRequests }}</div><div class="stat-foot">Semua lokasi permintaan stok</div></div></div>
+    <div class="col-6 col-xl"><div class="surface stat"><div class="stat-label">Stok menipis</div><div class="stat-value">{{ $lowStock }}</div><div class="stat-foot">Pada atau di bawah minimum</div></div></div>
+    <div class="col-6 col-xl"><div class="surface stat"><div class="stat-label">Lokasi dicek hari ini</div><div class="stat-value">{{ $checkedToday }}/{{ $checklistLocations }}</div><div class="stat-foot">Alur pengecekan aktif</div></div></div>
 </div>
 <div class="d-flex align-items-center justify-content-between mb-2"><h2 class="h5 mb-0">Per lokasi</h2>@can('locations.manage')<a href="{{ route('locations.index') }}" class="btn btn-sm btn-outline-secondary">Kelola lokasi</a>@endcan</div>
 <div class="row g-3 mb-4">
@@ -17,8 +18,8 @@
         <div class="col-lg-6"><div class="surface h-100">
             <div class="surface-head"><div><div class="page-eyebrow">{{ strtoupper($location->type->name) }} · {{ strtoupper($location->workflow_label) }}</div><h2>{{ $location->name }}</h2></div><span class="badge-status {{ $location->is_active ? '' : 'is-muted' }}">{{ $location->is_active ? 'Aktif' : 'Nonaktif' }}</span></div>
             <div class="surface-body d-flex align-items-center justify-content-between gap-3">
-                <div><strong>{{ $location->active_items_count }} jenis barang</strong><div class="form-hint">{{ $location->workflow === 'loan' ? $location->pending_loans_count.' pengajuan menunggu' : $location->pending_requests_count.' permintaan menunggu' }}</div></div>
-                @can('items.view')<a href="{{ route('items.index', ['location' => $location->id]) }}" class="btn btn-outline-primary btn-sm">Lihat barang</a>@endcan
+                <div><strong>{{ $location->active_items_count }} jenis barang</strong><div class="form-hint">@if($location->workflow === 'checklist'){{ $location->latestInspection?->inspected_on?->isToday() ? ($location->latestInspection->status === 'ok' ? 'Sudah dicek hari ini · sesuai' : 'Sudah dicek · perlu tindak lanjut') : 'Belum dicek hari ini' }}@else{{ $location->workflow === 'loan' ? $location->pending_loans_count.' pengajuan menunggu' : $location->pending_requests_count.' permintaan menunggu' }}@endif</div></div>
+                @if($location->workflow === 'checklist')@canany(['checks.view', 'checks.perform'])<a href="{{ route('inspections.create', $location) }}" class="btn btn-outline-primary btn-sm">Buka checklist</a>@endcanany @else @can('items.view')<a href="{{ route('items.index', ['location' => $location->id]) }}" class="btn btn-outline-primary btn-sm">Lihat barang</a>@endcan @endif
             </div>
         </div></div>
     @endforeach

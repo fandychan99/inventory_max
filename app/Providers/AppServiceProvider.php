@@ -28,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
         Paginator::useBootstrapFive();
         View::composer('layouts.app', function ($view) {
             $view->with('navigationLocations', auth()->user()?->can('items.view')
-                ? Location::where('is_active', true)->orderBy('name')->get()
+                ? Location::visible()->where('is_active', true)->orderBy('name')->get()
                 : collect());
         });
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip()));
