@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
+use App\Models\ItemMaster;
 use App\Models\Location;
 use App\Services\InventoryWorkflow;
 use Illuminate\Http\RedirectResponse;
@@ -33,17 +34,34 @@ class ItemController extends Controller
             : Location::visible()->where('is_active', true)->orderBy('id')->firstOrFail();
         abort_unless($location->is_active, 422);
 
-        return view('items.form', ['item' => new Item(['location_id' => $location->id]), 'location' => $location]);
+        return view('items.form', [
+            'item' => new Item(['location_id' => $location->id]),
+            'location' => $location,
+            'masters' => ItemMaster::whereDoesntHave('items', fn ($query) => $query->where('location_id', $location->id))
+                ->orderBy('name')->get(),
+        ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, InventoryWorkflow $workflow): RedirectResponse
     {
         $data = $this->validated($request);
         $location = Location::visible()->findOrFail($data['location_id']);
         abort_unless($location->is_active, 422);
-        $data['quantity'] = $location->workflow === Location::WORKFLOW_STOCK ? 0 : $data['quantity'];
-        $data['is_active'] = true;
-        $item = Item::create($data);
+        $stockNote = $request->validate(['stock_change_note' => ['nullable', 'string', 'max:255']])['stock_change_note'] ?? null;
+        $initialStock = $location->workflow === Location::WORKFLOW_STOCK ? (int) $data['quantity'] : 0;
+        if ($initialStock > 0) {
+            abort_unless($request->user()->can('stock.adjust'), 403);
+            $data['quantity'] = 0;
+        }
+
+        $item = DB::transaction(function () use ($data, $initialStock, $stockNote, $request, $workflow) {
+            $item = Item::create([...$data, 'is_active' => true]);
+            if ($initialStock > 0) {
+                $workflow->adjustStock($item, $initialStock, filled($stockNote) ? $stockNote : 'Stok awal', $request->user());
+            }
+
+            return $item;
+        });
 
         return redirect()->route('items.index', ['location' => $item->location_id])->with('success', 'Barang berhasil ditambahkan.');
     }
@@ -52,7 +70,7 @@ class ItemController extends Controller
     {
         abort_if($item->location->archived_at, 404);
 
-        return view('items.form', ['item' => $item, 'location' => $item->location]);
+        return view('items.form', ['item' => $item->load('master'), 'location' => $item->location]);
     }
 
     public function update(Request $request, Item $item, InventoryWorkflow $workflow): RedirectResponse
@@ -108,20 +126,18 @@ class ItemController extends Controller
 
     private function validated(Request $request, ?Item $item = null): array
     {
-        $data = $request->validate([
+        $rules = [
             'location_id' => ['required', 'integer', Rule::exists('locations', 'id')],
-            'sku' => ['required', 'string', 'max:80', 'regex:/^[A-Za-z0-9._\/-]+$/', Rule::unique('items', 'sku')->ignore($item?->id)],
-            'name' => ['required', 'string', 'max:255'],
-            'unit' => ['required', 'string', 'max:30'],
             'quantity' => ['required', 'integer', 'min:0', 'max:1000000'],
             'minimum_stock' => ['required', 'integer', 'min:0', 'max:1000000'],
-            'description' => ['nullable', 'string', 'max:2000'],
-        ]);
-
-        if (Location::where('scan_code', $data['sku'])->exists()) {
-            throw ValidationException::withMessages(['sku' => 'Kode barang sudah digunakan sebagai barcode lokasi.']);
+        ];
+        if ($item === null) {
+            $rules['master_item_id'] = [
+                'required', 'integer', Rule::exists('item_masters', 'id'),
+                Rule::unique('items', 'master_item_id')->where('location_id', $request->input('location_id')),
+            ];
         }
 
-        return $data;
+        return $request->validate($rules);
     }
 }

@@ -21,7 +21,7 @@ Role di tabel adalah penugasan awal. Sistem memutuskan hak dari **permission**, 
 | UC-01 | Masuk/keluar | Semua pengguna | Akun terdaftar | Sesi autentikasi dibuat atau diakhiri. |
 | UC-02 | Pantau ringkasan | Semua role bawaan | `dashboard.view` | Statistik dan aktivitas terbaru terlihat sesuai cakupan akses transaksi. |
 | UC-03 | Kelola jenis dan lokasi | Administrator | `locations.manage` | Jenis/lokasi bertambah atau berubah. |
-| UC-04 | Kelola katalog dan label | Administrator atau role khusus | `items.manage`; label: `items.view` | Item tercatat dan label Code 128 dapat dicetak. |
+| UC-04 | Kelola master, penempatan, dan label | Administrator atau role khusus | `items.manage`; label: `items.view` | Identitas barang dibuat sekali, lalu ditempatkan di satu atau banyak lokasi. |
 | UC-05 | Ajukan dan pantau pinjaman | Pemohon | `loans.create` | Pinjaman `submitted` tersimpan dan pemohon dapat melihatnya. |
 | UC-06 | Putuskan pinjaman | Petugas pinjaman | `loans.approve` | Pinjaman menjadi `approved` atau `rejected`. |
 | UC-07 | Serahkan dan terima kembali alat | Petugas pinjaman | `loans.handover` | Pinjaman menjadi `issued`, lalu `returned`; ketersediaan berubah. |
@@ -33,7 +33,7 @@ Role di tabel adalah penugasan awal. Sistem memutuskan hak dari **permission**, 
 | UC-13 | Atur pengguna, role, dan izin | Administrator | `access.manage` | Hak akses akun diperbarui. |
 | UC-14 | Catat dan tinjau pengecekan | Petugas pemeriksaan | `checks.perform`; lihat: `checks.view` | Snapshot semua peralatan di lokasi tersimpan dengan status sesuai/perlu tindak lanjut. |
 | UC-15 | Cetak barcode lokasi | Petugas pemeriksaan atau Administrator | `checks.view` | Satu label Code 128 mewakili satu truk/lemari. |
-| UC-16 | Unduh data stok ke Excel | Petugas stok atau Administrator | `items.view`, `stock.export` | XLSX seluruh stok atau satu lokasi stok terunduh. |
+| UC-16 | Unduh katalog lokasi ke Excel | Petugas operasional atau Administrator | `items.view`, `stock.export` | XLSX untuk satu lokasi terunduh dengan kolom sesuai alurnya. |
 | UC-17 | Arsipkan/pulihkan lokasi dan jenis | Administrator | `locations.manage` | Entri hilang dari katalog/pilihan tanpa menghapus transaksi lama. |
 
 ## Rincian use case utama
@@ -45,12 +45,12 @@ Role di tabel adalah penugasan awal. Sistem memutuskan hak dari **permission**, 
 - **Alternatif:** nama jenis/lokasi ganda ditolak. Perubahan alur ditolak jika lokasi sudah mempunyai item.
 - **Hasil:** lokasi baru aktif dan dapat dipakai mendaftarkan barang. Lokasi yang diarsipkan tidak muncul di katalog/scan/pilihan operasional, tetapi barang serta transaksi lama tetap tersimpan. Jenis dengan lokasi yang masih terlihat tidak dapat diarsipkan.
 
-### UC-04 — Kelola katalog dan label
+### UC-04 — Kelola master, penempatan, dan label
 
-- **Prasyarat:** pengguna memiliki `items.manage`; lokasi aktif sudah ada.
-- **Alur utama:** pilih lokasi → **Tambah barang** → isi SKU unik, nama, satuan, jumlah total untuk alur pinjaman atau jumlah standar untuk pengecekan → simpan. Pilih **Label** → **Cetak label** untuk barcode barang.
-- **Alternatif:** SKU ganda atau format SKU tidak sah ditolak. Barang alur stok dibuat dengan saldo 0, lalu stok awal dicatat lewat UC-11. Lokasi item tidak dapat dipindahkan lewat form edit.
-- **Hasil:** item dapat dicari dan dipindai berdasarkan SKU.
+- **Prasyarat:** pengguna memiliki `items.manage`; lokasi aktif diperlukan saat menempatkan master.
+- **Alur utama:** buka **Master barang** → buat satu SKU unik, nama, dan satuan → buka katalog lokasi → **Tempatkan barang** → pilih master, lalu isi jumlah total/standar atau stok awal sesuai alur. Ulangi pada lokasi lain dengan master yang sama. Stok awal positif dicatat sebagai mutasi. Pilih **Label** → **Cetak label** untuk barcode barang.
+- **Alternatif:** SKU master ganda atau format tidak sah ditolak. Master yang sama tidak boleh ditempatkan dua kali di lokasi yang sama. Pengguna tanpa `stock.adjust` hanya dapat menempatkan barang stok dengan saldo 0, lalu petugas berizin mencatat stok awal lewat UC-11. Lokasi penempatan tidak dapat dipindahkan lewat form edit.
+- **Hasil:** item dapat dicari dan dipindai berdasarkan SKU; jumlah dan status setiap lokasi tetap independen.
 
 ### UC-05 sampai UC-07 — Pinjaman alat
 
@@ -66,11 +66,11 @@ Role di tabel adalah penugasan awal. Sistem memutuskan hak dari **permission**, 
 - **Alternatif:** petugas dapat **Tolak** saat `submitted` dengan alasan wajib. Jika stok kurang saat pemenuhan, status tetap `approved` dan saldo tidak berubah. Aksi berulang atau melompati urutan status ditolak.
 - **Hasil:** saldo dan mutasi menggambarkan barang yang benar-benar dikeluarkan. Persetujuan sendiri tidak mengurangi stok. Koreksi saldo melalui form edit barang memerlukan izin `stock.adjust` dan alasan; selisihnya juga dicatat sebagai mutasi.
 
-### UC-16 — Unduh data stok
+### UC-16 — Unduh katalog lokasi
 
 - **Prasyarat:** pengguna memiliki `items.view` dan `stock.export`.
-- **Alur utama:** buka katalog lokasi stok → pilih **Excel lokasi ini** atau **Excel semua stok** → sistem mengambil seluruh item dari lokasi stok yang tidak diarsipkan dan menghasilkan `.xlsx` berisi identitas barang, lokasi, saldo, batas minimum, dan status.
-- **Alternatif:** lokasi yang dipilih bukan alur stok atau sudah diarsipkan, atau pengguna tidak punya izin; sistem menolak unduhan. Filter pencarian pada katalog berlaku untuk ekspor lokasi itu.
+- **Alur utama:** buka katalog lokasi pinjam, stok, atau pengecekan → pilih **Excel lokasi ini** → sistem mengambil item dari lokasi tersebut dan menghasilkan `.xlsx` berisi identitas barang serta jumlah dan status sesuai alur.
+- **Alternatif:** lokasi tidak dipilih atau sudah diarsipkan, atau pengguna tidak punya izin; sistem menolak unduhan. Filter pencarian pada katalog berlaku untuk ekspor lokasi itu.
 - **Hasil:** berkas Excel dapat dibuka tanpa mengubah saldo. Nilai teks disimpan sebagai teks agar nama/SKU yang menyerupai rumus tidak dijalankan.
 
 ### UC-17 — Arsipkan dan pulihkan lokasi/jenis
@@ -83,7 +83,7 @@ Role di tabel adalah penugasan awal. Sistem memutuskan hak dari **permission**, 
 ### UC-11 dan UC-12 — Mutasi dan pemindaian
 
 - **Prasyarat:** pengguna sudah masuk. Untuk mutasi stok perlu `stock.adjust`; untuk serah terima atau pemenuhan perlu izin aksi masing-masing.
-- **Alur utama:** pengguna membuka **Scan barang** → scanner keyboard mengisi kode dan Enter, atau kamera HP membaca Code 128/QR → sistem mencari barcode lokasi checklist atau item berdasarkan SKU → pengguna memilih aksi yang tersedia. Untuk stok langsung, pilih arah masuk/keluar, jumlah, dan alasan → sistem menyimpan saldo serta mutasi. Barcode lokasi membuka UC-14.
+- **Alur utama:** pengguna membuka **Scan barang** → scanner keyboard mengisi kode dan Enter, atau kamera HP membaca Code 128/QR → sistem mencari barcode lokasi checklist atau semua penempatan item berdasarkan SKU → bila beberapa lokasi memakai SKU yang sama, pengguna memilih lokasi → pengguna memilih aksi yang tersedia. Untuk stok langsung, pilih arah masuk/keluar, jumlah, dan alasan → sistem menyimpan saldo serta mutasi. Barcode lokasi membuka UC-14.
 - **Alternatif:** SKU tidak ditemukan; kamera tidak diizinkan/tidak tersedia; saldo akan negatif; transaksi yang diharapkan belum disetujui; pengguna tidak punya izin. Sistem menampilkan pesan atau menolak aksi sesuai kondisi.
 - **Hasil:** scan sendiri tidak mengubah data. Perubahan terjadi hanya setelah pengguna mengirim tindakan POST yang diizinkan.
 

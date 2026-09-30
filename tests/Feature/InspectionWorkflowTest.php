@@ -91,9 +91,8 @@ class InspectionWorkflowTest extends TestCase
         $this->actingAs($applicant)->post(route('inspections.store', $location), [
             'rows' => [$item->id => ['actual_quantity' => 1, 'condition' => 'good']],
         ])->assertForbidden();
-        $this->actingAs($admin)->post(route('items.store'), [
-            'location_id' => $location->id, 'sku' => 'TRUCK-TEST-01', 'name' => 'Tabrakan kode',
-            'unit' => 'unit', 'quantity' => 1, 'minimum_stock' => 0,
+        $this->actingAs($admin)->post(route('item-masters.store'), [
+            'sku' => 'TRUCK-TEST-01', 'name' => 'Tabrakan kode', 'unit' => 'unit',
         ])->assertSessionHasErrors('sku');
         $this->post(route('locations.store'), [
             'location_type_id' => $location->location_type_id, 'name' => 'Truk Kedua',

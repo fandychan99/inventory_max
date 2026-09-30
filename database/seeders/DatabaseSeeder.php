@@ -30,10 +30,10 @@ class DatabaseSeeder extends Seeder
         $admin = Role::findOrCreate('Administrator', 'web');
         $admin->syncPermissions($names);
         $defaults = [
-            'Petugas Gudang A' => ['dashboard.view', 'items.view', 'loans.create', 'loans.view-all', 'loans.approve', 'loans.handover'],
+            'Petugas Gudang A' => ['dashboard.view', 'items.view', 'stock.export', 'loans.create', 'loans.view-all', 'loans.approve', 'loans.handover'],
             'Petugas Gudang B' => ['dashboard.view', 'items.view', 'stock.adjust', 'stock.export', 'requests.create', 'requests.view-all', 'requests.approve', 'requests.fulfill'],
             'Pemohon' => ['dashboard.view', 'items.view', 'loans.create', 'requests.create'],
-            'Petugas Pemeriksaan' => ['dashboard.view', 'items.view', 'checks.view', 'checks.perform'],
+            'Petugas Pemeriksaan' => ['dashboard.view', 'items.view', 'stock.export', 'checks.view', 'checks.perform'],
         ];
         foreach ($defaults as $name => $permissions) {
             $role = Role::findOrCreate($name, 'web');

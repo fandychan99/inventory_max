@@ -6,7 +6,7 @@ Panduan ini mengikuti tampilan dan alur aplikasi saat ini. Menu yang terlihat be
 
 1. Buka alamat aplikasi yang diberikan pengelola, lalu masuk dengan email dan kata sandi akun Anda. Akun awal Administrator dibuat saat instalasi dari `INITIAL_ADMIN_EMAIL` dan `INITIAL_ADMIN_PASSWORD`; tidak ada kata sandi umum yang dibagikan aplikasi.
 2. Setelah masuk, halaman **Ringkasan** menampilkan pinjaman berjalan, keterlambatan, permintaan menunggu, stok menipis, progres pengecekan harian, serta kartu per lokasi.
-3. Gunakan menu **Scan barang**, **Pengecekan**, nama lokasi di **Lokasi · Katalog**, **Peminjaman**, **Permintaan**, **Lokasi & jenis**, atau **Role & akses** sesuai tugas Anda. Klik **Keluar** setelah selesai, terutama pada perangkat bersama.
+3. Gunakan menu **Scan barang**, **Master barang**, **Pengecekan**, nama lokasi di **Lokasi · Katalog**, **Peminjaman**, **Permintaan**, **Lokasi & jenis**, atau **Role & akses** sesuai tugas Anda. Klik **Keluar** setelah selesai, terutama pada perangkat bersama.
 
 | Role bawaan | Kegiatan utama |
 | --- | --- |
@@ -32,10 +32,10 @@ Nama role bawaan merupakan contoh penugasan. Administrator dapat membuat role la
 
 ## 3. Mendaftarkan barang dan mencetak label
 
-1. Buka nama lokasi di menu katalog dan pilih **Tambah barang**.
-2. Isi **Kode barang (SKU)** yang unik di seluruh lokasi, nama, satuan, batas minimum, dan keterangan bila perlu. SKU boleh berisi huruf, angka, titik, garis bawah, garis miring, dan tanda hubung.
-3. Untuk lokasi **pinjam kembali**, isi **Jumlah total alat**. Untuk lokasi **pengecekan**, isi **Jumlah standar** yang seharusnya ada di lokasi. Untuk lokasi **permintaan stok**, barang baru selalu mulai dengan stok 0; catat saldo awal melalui mutasi setelah disimpan.
-4. Pilih **Simpan barang**. Di daftar, pilih **Ubah** untuk memperbarui rincian atau menonaktifkan barang. Lokasi barang tidak bisa dipindah lewat formulir ini.
+1. Buka **Master barang** → **Tambah master**. Isi **Kode barang (SKU)**, nama, satuan, dan keterangan bila perlu. SKU unik di master dan boleh berisi huruf, angka, titik, garis bawah, garis miring, atau tanda hubung.
+2. Buka nama lokasi di katalog → **Tempatkan barang** → pilih master barang. Master yang sama dapat dipilih di Fire Truck A dan B maupun Gudang A dan B. Satu master hanya boleh ditempatkan sekali pada lokasi yang sama.
+3. Untuk lokasi **pinjam kembali**, isi **Jumlah total alat**. Untuk lokasi **pengecekan**, isi **Jumlah standar** yang seharusnya ada di lokasi. Untuk lokasi **permintaan stok**, pengguna yang memiliki izin `items.manage` dan `stock.adjust` dapat mengisi **Stok awal** saat menempatkan barang. Isi **Catatan stok awal** bila perlu; jika kosong, mutasi diberi catatan “Stok awal”. Pengguna tanpa izin `stock.adjust` dapat menempatkan barang dengan stok awal 0.
+4. Pilih **Tempatkan barang**. Di daftar lokasi, pilih **Ubah** untuk memperbarui jumlah, batas minimum, atau status aktif. Ubah kode, nama, satuan, dan keterangan melalui **Master barang**; perubahan berlaku di semua lokasi. Lokasi barang tidak bisa dipindah lewat formulir ini.
 5. Pilih **Label**, lalu **Cetak label**. Tempel barcode Code 128 pada barang atau rak. Untuk lokasi alur pengecekan, cetak **Barcode lokasi** dari menu **Pengecekan**, lalu tempel satu label pada truk/lemari.
 
 **Tersedia** pada alat pinjam kembali = total alat dikurangi jumlah yang berstatus **Dipinjam**. Pada barang stok, **Tersedia** sama dengan saldo saat ini. Pengajuan yang baru disetujui belum mengurangi ketersediaan; pemeriksaan ulang dilakukan ketika alat diserahkan atau barang dikeluarkan.
@@ -44,11 +44,11 @@ Nama role bawaan merupakan contoh penugasan. Administrator dapat membuat role la
 
 Untuk barang di lokasi **permintaan stok**, buka katalog dan pilih **Mutasi** pada barang terkait. Isi **Perubahan jumlah** dengan angka positif untuk menambah atau negatif untuk mengurangi, tulis **Alasan penyesuaian**, lalu **Simpan mutasi**. Riwayat menampilkan waktu, jenis, perubahan, saldo akhir, petugas, dan catatan.
 
-Alternatifnya, buka **Scan barang**, baca SKU, lalu pada **Stok masuk / keluar langsung** pilih **Masuk** atau **Keluar**, isi jumlah dan alasan/nomor dokumen, dan pilih **Catat mutasi stok**. Untuk memenuhi permintaan yang sudah disetujui, gunakan tombol **Keluarkan barang** pada daftar permintaan, agar pengeluaran terhubung ke nomor permintaan. Saldo tidak boleh menjadi negatif.
+Alternatifnya, buka **Scan barang**, baca SKU, pilih lokasi bila kode ada di beberapa tempat, lalu pada **Stok masuk / keluar langsung** pilih **Masuk** atau **Keluar**, isi jumlah dan alasan/nomor dokumen, dan pilih **Catat mutasi stok**. Untuk memenuhi permintaan yang sudah disetujui, gunakan tombol **Keluarkan barang** pada daftar permintaan, agar pengeluaran terhubung ke nomor permintaan. Saldo tidak boleh menjadi negatif.
 
-Administrator atau akun dengan izin mengelola barang sekaligus menyesuaikan stok dapat membuka **Ubah barang**, mengubah **Stok saat ini**, lalu mengisi **Alasan perubahan stok**. Selisih angka dicatat otomatis sebagai mutasi. Barang stok baru tetap dibuat dengan stok 0; isi stok awal melalui **Mutasi** setelah disimpan.
+Administrator atau akun dengan izin mengelola barang sekaligus menyesuaikan stok dapat membuka **Ubah** pada penempatan barang, mengubah **Stok saat ini**, lalu mengisi **Alasan perubahan stok**. Selisih angka dicatat otomatis sebagai mutasi. Saat menempatkan barang baru, akun dengan kedua izin tersebut juga dapat langsung mengisi **Stok awal**; jumlahnya dicatat sebagai mutasi. Barang yang ditempatkan dengan stok awal 0 dapat diisi kemudian melalui **Mutasi**.
 
-Untuk mengunduh data, buka katalog lokasi **permintaan stok**. Pilih **Excel lokasi ini** untuk stok lokasi yang sedang dibuka (mengikuti pencarian nama/SKU), atau **Excel semua stok** untuk semua lokasi stok yang tidak diarsipkan. Berkas `.xlsx` memuat kode, nama, lokasi, jenis lokasi, satuan, saldo, batas minimum, dan status. Izin `stock.export` dapat diatur dari **Role & akses**.
+Untuk mengunduh data, buka katalog lokasi mana pun lalu pilih satu tombol **Excel lokasi ini**. Berkas `.xlsx` hanya berisi barang pada lokasi yang sedang dibuka dan mengikuti pencarian nama/SKU. Gudang pinjam menampilkan jumlah total dan tersedia; lokasi permintaan stok menampilkan saldo, batas minimum, dan status stok; lokasi pengecekan menampilkan jumlah standar. Ekspor tersedia untuk Administrator serta petugas operasional bawaan, dan izin `stock.export` dapat diatur dari **Role & akses**.
 
 ## 5. Alur peminjaman alat
 
@@ -75,12 +75,12 @@ Persetujuan sendiri belum mengurangi stok. Daftar **Permintaan** dapat difilter 
 3. Periksa setiap baris, isi **Ditemukan** dan **Kondisi**. Jika jumlah berbeda dari standar atau ada alat rusak, isi catatan pada baris tersebut. Tambahkan catatan umum bila perlu, lalu pilih **Simpan hasil pengecekan**.
 4. Hasil tercatat dengan tanggal, jam, nama petugas, rincian peralatan, dan status **Sesuai** atau **Perlu tindak lanjut**. Riwayat dapat dilihat pada halaman lokasi dan detail pemeriksaan. Pemeriksaan boleh diulang pada hari yang sama; setiap kiriman menjadi catatan tersendiri.
 
-Pengecekan tidak otomatis mengubah jumlah standar, stok, atau transaksi pinjam. Bila ada selisih, tindak lanjuti secara operasional dan sesuaikan data master bila jumlah standar memang berubah.
+Pengecekan tidak otomatis mengubah jumlah standar, stok, atau transaksi pinjam. Bila ada selisih, tindak lanjuti secara operasional dan ubah jumlah standar pada penempatan lokasi bila memang berubah.
 
 ## 8. Menggunakan scanner dan kamera HP
 
 1. Buka **Scan barang**. Dengan scanner USB/Bluetooth yang bertindak sebagai keyboard, fokuskan kolom **Kode pada label** lalu pindai barcode. Atur scanner agar mengirim **Enter**; jika tidak, pilih **Cari**.
-2. Pada HP, buka alamat aplikasi melalui **HTTPS**, pilih **Buka kamera**, izinkan akses, lalu arahkan kamera ke barcode Code 128. Kode QR yang hanya berisi kode valid juga dapat dibaca. Hasil scan membuka barang atau checklist lokasi yang cocok; kamera dapat ditutup dengan **Tutup kamera**.
+2. Pada HP, buka alamat aplikasi melalui **HTTPS**, pilih **Buka kamera**, izinkan akses, lalu arahkan kamera ke barcode Code 128. Kode QR yang hanya berisi kode valid juga dapat dibaca. Jika satu SKU berada di beberapa lokasi, pilih lokasi yang tepat sebelum melakukan transaksi. Barcode lokasi checklist langsung membuka daftar peralatan lokasi tersebut; kamera dapat ditutup dengan **Tutup kamera**.
 3. Pilih tindakan yang tersedia sesuai alur lokasi dan izin akun: **Serahkan/Terima kembali** untuk pinjaman, **Keluarkan barang** untuk permintaan yang disetujui, mutasi stok langsung, atau **Simpan hasil pengecekan** untuk lokasi checklist.
 
 `http://127.0.0.1:8000` hanya menunjuk komputer tempat server berjalan. HP perlu alamat server yang dapat dijangkau dan HTTPS agar browser memberi akses kamera. Jika muncul pesan kamera tidak bisa dibuka, periksa izin situs, kamera yang sedang dipakai aplikasi lain, dan HTTPS. Scanner USB/Bluetooth tetap dapat digunakan tanpa kamera. Jika SKU tidak ditemukan, cocokkan kode yang terbaca dengan katalog.

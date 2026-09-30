@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Item;
+use App\Models\ItemMaster;
 use App\Models\Location;
 use App\Models\LocationType;
 use Illuminate\Http\RedirectResponse;
@@ -74,7 +74,7 @@ class LocationController extends Controller
             'scan_code' => ['nullable', Rule::requiredIf($request->input('workflow') === Location::WORKFLOW_CHECKLIST), 'string', 'max:80', 'regex:/^[A-Za-z0-9._\/-]+$/', Rule::unique('locations', 'scan_code')->ignore($location?->id)],
         ]);
 
-        if ($data['workflow'] === Location::WORKFLOW_CHECKLIST && Item::where('sku', $data['scan_code'])->exists()) {
+        if ($data['workflow'] === Location::WORKFLOW_CHECKLIST && ItemMaster::where('sku', $data['scan_code'])->exists()) {
             throw ValidationException::withMessages(['scan_code' => 'Kode lokasi sudah digunakan sebagai kode barang.']);
         }
 

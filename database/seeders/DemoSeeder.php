@@ -138,8 +138,7 @@ class DemoSeeder extends Seeder
             throw new RuntimeException("Alur lokasi {$location->name} tidak didukung oleh data demo.");
         }
 
-        $item = Item::firstOrCreate(['sku' => $sku], [
-            'location_id' => $location->id,
+        $item = Item::firstOrCreate(['location_id' => $location->id, 'sku' => $sku], [
             'name' => $name,
             'unit' => $unit,
             'quantity' => $location->workflow === Location::WORKFLOW_STOCK ? 0 : $quantity,
@@ -147,9 +146,6 @@ class DemoSeeder extends Seeder
             'description' => 'Data contoh TanggapEquip untuk simulasi operasional.',
             'is_active' => true,
         ]);
-        if ($item->location_id !== $location->id) {
-            throw new RuntimeException("SKU demo {$sku} sudah dipakai di lokasi lain.");
-        }
         if ($item->wasRecentlyCreated && $location->workflow === Location::WORKFLOW_STOCK) {
             $workflow->adjustStock($item, $quantity, 'Demo: stok awal', $actor);
         }

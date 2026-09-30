@@ -5,11 +5,8 @@
     <div><div class="page-eyebrow">{{ strtoupper($location->type->name) }} · {{ strtoupper($location->name) }}</div><h1 class="page-title">{{ $location->name }}</h1><p class="page-subtitle">{{ match($location->workflow) { 'loan' => 'Peralatan di lokasi ini dipinjam dan dikembalikan.', 'stock' => 'Saldo stok diperbarui melalui mutasi dan pemenuhan permintaan.', 'checklist' => 'Jumlah standar peralatan untuk pengecekan rutin di lokasi ini.' } }}</p></div>
     <div class="d-flex flex-wrap gap-2">
         @if($location->workflow === 'checklist')@canany(['checks.view', 'checks.perform'])<a href="{{ route('inspections.create', $location) }}" class="btn btn-outline-primary">Buka checklist</a>@endcanany @endif
-        @if($location->workflow === 'stock')@can('stock.export')
-            <a href="{{ route('items.export-stock', ['location' => $location->id, 'q' => request('q')]) }}" class="btn btn-outline-primary"><i class="bi bi-file-earmark-excel me-1"></i> Excel lokasi ini</a>
-            <a href="{{ route('items.export-stock') }}" class="btn btn-outline-secondary">Excel semua stok</a>
-        @endcan @endif
-        @can('items.manage')@if($location->is_active)<a href="{{ route('items.create', ['location' => $location->id]) }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Tambah barang</a>@endif @endcan
+        @can('stock.export')<a href="{{ route('items.export-location', ['location' => $location->id, 'q' => request('q')]) }}" class="btn btn-outline-primary"><i class="bi bi-file-earmark-excel me-1"></i> Excel lokasi ini</a>@endcan
+        @can('items.manage')@if($location->is_active)<a href="{{ route('items.create', ['location' => $location->id]) }}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Tempatkan barang</a>@endif @endcan
     </div>
 </div>
 <div class="surface">

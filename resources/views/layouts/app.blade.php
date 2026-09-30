@@ -24,12 +24,15 @@
         <div class="sidebar-wrapper"><nav class="mt-3"><ul class="nav sidebar-menu flex-column" data-lte-toggle="treeview" role="menu">
             @can('dashboard.view')<li class="nav-item"><a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"><i class="nav-icon bi bi-grid-1x2"></i><p>Ringkasan</p></a></li>@endcan
             @canany(['items.view', 'stock.adjust', 'loans.handover', 'requests.fulfill', 'checks.view', 'checks.perform'])<li class="nav-item"><a href="{{ route('scan.index') }}" class="nav-link {{ request()->routeIs('scan.*') ? 'active' : '' }}"><i class="nav-icon bi bi-upc-scan"></i><p>Scan barang / lokasi</p></a></li>@endcanany
-            @can('items.view')
+            @canany(['items.view', 'items.manage'])
                 <li class="nav-header">LOKASI · KATALOG</li>
+                <li class="nav-item"><a href="{{ route('item-masters.index') }}" class="nav-link {{ request()->routeIs('item-masters.*') ? 'active' : '' }}"><i class="nav-icon bi bi-collection"></i><p>Master barang</p></a></li>
+                @can('items.view')
                 @foreach($navigationLocations as $navLocation)
                     <li class="nav-item"><a href="{{ route('items.index', ['location' => $navLocation->id]) }}" class="nav-link {{ request()->routeIs('items.*') && request()->integer('location') === $navLocation->id ? 'active' : '' }}"><i class="nav-icon bi {{ $navLocation->workflow === 'loan' ? 'bi-box-seam' : 'bi-boxes' }}"></i><p>{{ $navLocation->name }}</p></a></li>
                 @endforeach
-            @endcan
+                @endcan
+            @endcanany
             <li class="nav-header">TRANSAKSI</li>
             @canany(['loans.create', 'loans.view-all'])<li class="nav-item"><a href="{{ route('loans.index') }}" class="nav-link {{ request()->routeIs('loans.*') ? 'active' : '' }}"><i class="nav-icon bi bi-arrow-left-right"></i><p>Peminjaman</p></a></li>@endcanany
             @canany(['requests.create', 'requests.view-all'])<li class="nav-item"><a href="{{ route('requests.index') }}" class="nav-link {{ request()->routeIs('requests.*') ? 'active' : '' }}"><i class="nav-icon bi bi-clipboard-check"></i><p>Permintaan</p></a></li>@endcanany

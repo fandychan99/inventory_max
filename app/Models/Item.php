@@ -8,7 +8,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Item extends Model
 {
-    protected $fillable = ['location_id', 'sku', 'name', 'unit', 'quantity', 'minimum_stock', 'description', 'is_active'];
+    protected $fillable = ['location_id', 'master_item_id', 'sku', 'name', 'unit', 'quantity', 'minimum_stock', 'description', 'is_active'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Item $item): void {
+            $master = $item->master_item_id
+                ? ItemMaster::findOrFail($item->master_item_id)
+                : ItemMaster::firstOrCreate(['sku' => $item->sku], [
+                    'name' => $item->name,
+                    'unit' => $item->unit ?: 'unit',
+                    'description' => $item->description,
+                ]);
+
+            $item->master_item_id = $master->id;
+            $item->sku = $master->sku;
+            $item->name = $master->name;
+            $item->unit = $master->unit;
+            $item->description = $master->description;
+        });
+    }
 
     protected function casts(): array
     {
@@ -18,6 +37,11 @@ class Item extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function master(): BelongsTo
+    {
+        return $this->belongsTo(ItemMaster::class, 'master_item_id');
     }
 
     public function loans(): HasMany

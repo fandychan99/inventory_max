@@ -16,7 +16,10 @@ class ScanController extends Controller
 {
     public function index(Request $request): View|RedirectResponse
     {
-        $data = $request->validate(['code' => ['nullable', 'string', 'max:80']]);
+        $data = $request->validate([
+            'code' => ['nullable', 'string', 'max:80'],
+            'item' => ['nullable', 'integer'],
+        ]);
         $code = trim($data['code'] ?? '');
         $location = $code !== '' ? Location::visible()->where('workflow', Location::WORKFLOW_CHECKLIST)->where('scan_code', $code)->first() : null;
         if ($location) {
@@ -24,7 +27,11 @@ class ScanController extends Controller
 
             return redirect()->route('inspections.create', $location);
         }
-        $item = $code !== '' ? Item::with('location')->whereHas('location', fn ($query) => $query->visible())->where('sku', $code)->first() : null;
+        $matches = $code !== '' ? Item::with('location')->whereHas('location', fn ($query) => $query->visible())
+            ->where('sku', $code)->orderBy('location_id')->get() : collect();
+        $selectedId = isset($data['item']) ? (int) $data['item'] : null;
+        $item = $selectedId !== null ? $matches->firstWhere('id', $selectedId) : ($matches->count() === 1 ? $matches->first() : null);
+        abort_if($selectedId !== null && ! $item, 404);
         if ($item?->location->workflow === Location::WORKFLOW_CHECKLIST) {
             abort_unless($request->user()->canAny(['checks.view', 'checks.perform']), 403);
 
@@ -42,7 +49,7 @@ class ScanController extends Controller
                 ->where('status', 'approved')->oldest()->get();
         }
 
-        return view('scan.index', compact('code', 'item', 'loans', 'stockRequests'));
+        return view('scan.index', compact('code', 'item', 'matches', 'loans', 'stockRequests'));
     }
 
     public function moveStock(Request $request, InventoryWorkflow $workflow): RedirectResponse
@@ -60,6 +67,6 @@ class ScanController extends Controller
         $change = $data['direction'] === 'in' ? (int) $data['quantity'] : -(int) $data['quantity'];
         $workflow->adjustStock($item, $change, $data['note'], $request->user(), $data['direction']);
 
-        return redirect()->route('scan.index', ['code' => $item->sku])->with('success', 'Mutasi stok dari hasil scan berhasil dicatat.');
+        return redirect()->route('scan.index', ['code' => $item->sku, 'item' => $item->id])->with('success', 'Mutasi stok dari hasil scan berhasil dicatat.');
     }
 }

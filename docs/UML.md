@@ -24,11 +24,11 @@ flowchart LR
         fulfill(["Keluarkan barang permintaan"])
         adjust(["Catat mutasi stok"])
         locations(["Kelola jenis dan lokasi"])
-        items(["Kelola barang dan label"])
+        items(["Kelola master, penempatan, label"])
         access(["Kelola pengguna, role, izin"])
         inspect(["Catat dan lihat pengecekan"])
         locationLabel(["Cetak barcode lokasi"])
-        exportStock(["Unduh data stok XLSX"])
+        exportStock(["Unduh katalog lokasi XLSX"])
         archive(["Arsipkan dan pulihkan lokasi/jenis"])
     end
 
@@ -67,9 +67,15 @@ classDiagram
         +is_active
         +archived_at
     }
-    class Item {
+    class ItemMaster {
         +sku
         +name
+        +unit
+        +description
+    }
+    class Item {
+        +master_item_id
+        +location_id
         +quantity
         +minimum_stock
         +available()
@@ -114,6 +120,7 @@ classDiagram
     Role "many" -- "many" Permission : grants
     LocationType "1" --> "many" Location : groups
     Location "1" --> "many" Item : contains
+    ItemMaster "1" --> "many" Item : placedAt
     Item "1" --> "many" Loan : borrowedIn
     Item "1" --> "many" StockRequest : requestedIn
     Item "1" --> "many" StockMovement : has
@@ -231,7 +238,10 @@ flowchart TD
     camera --> lookup
     lookup --> found{Kode ditemukan?}
     found -->|Tidak| retry[Tampilkan kode tidak ditemukan]
-    found -->|Ya| workflow{Alur lokasi}
+    found -->|Ya| multiple{SKU di beberapa lokasi?}
+    multiple -->|Ya| choose[Pilih lokasi barang]
+    multiple -->|Tidak| workflow{Alur lokasi}
+    choose --> workflow
     workflow -->|Pinjam kembali| loan[Perlihatkan pinjaman approved/issued]
     workflow -->|Permintaan stok| stock[Perlihatkan permintaan approved dan form mutasi]
     workflow -->|Pengecekan| check[Perlihatkan semua item aktif dan jumlah standar]
@@ -242,7 +252,7 @@ flowchart TD
     post --> result([Transaksi atau hasil pengecekan tersimpan])
 ```
 
-Scan adalah pencarian item atau lokasi. Tindakan pada hasil scan tetap mengikuti izin dan validasi server. Rincian kondisi ada di [use case](USE_CASES.md) dan [panduan kode](PANDUAN_KODE.md).
+Scan adalah pencarian item atau lokasi. SKU barang bisa dipakai pada beberapa lokasi sehingga pengguna memilih lokasi sebelum tindakan; barcode lokasi checklist tetap langsung membuka lokasi tersebut. Tindakan pada hasil scan mengikuti izin dan validasi server. Rincian kondisi ada di [use case](USE_CASES.md) dan [panduan kode](PANDUAN_KODE.md).
 
 ## 8. Diagram urutan pengecekan lokasi
 

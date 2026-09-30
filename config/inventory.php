@@ -8,7 +8,7 @@ return [
         'items.view' => 'Lihat katalog barang',
         'items.manage' => 'Kelola data barang',
         'stock.adjust' => 'Sesuaikan stok lokasi permintaan',
-        'stock.export' => 'Unduh data stok ke Excel',
+        'stock.export' => 'Unduh katalog lokasi ke Excel',
         'loans.create' => 'Ajukan peminjaman',
         'loans.view-all' => 'Lihat semua peminjaman',
         'loans.approve' => 'Setujui / tolak peminjaman',

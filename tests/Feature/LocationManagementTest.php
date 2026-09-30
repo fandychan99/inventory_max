@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Item;
+use App\Models\ItemMaster;
 use App\Models\Location;
 use App\Models\LocationType;
+use App\Models\StockMovement;
 use App\Models\StockRequest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,13 +32,21 @@ class LocationManagementTest extends TestCase
         ])->assertRedirect();
         $location = Location::firstWhere('name', 'Kontainer 01');
 
+        $this->post(route('item-masters.store'), ['sku' => 'K-01', 'name' => 'Lakban', 'unit' => 'roll'])->assertRedirect();
+        $master = ItemMaster::firstWhere('sku', 'K-01');
+        $form = $this->get(route('items.create', ['location' => $location->id]))->assertOk()->assertSee('Stok awal');
+        $this->assertSame(0, preg_match('/<input id="quantity"[^>]*readonly/', $form->getContent()));
         $this->post(route('items.store'), [
-            'location_id' => $location->id, 'sku' => 'K-01', 'name' => 'Lakban',
-            'unit' => 'roll', 'quantity' => 20, 'minimum_stock' => 2,
+            'location_id' => $location->id, 'master_item_id' => $master->id,
+            'quantity' => 20, 'minimum_stock' => 2,
         ])->assertRedirect();
         $item = Item::firstWhere('sku', 'K-01');
 
-        $this->assertSame(0, $item->quantity);
+        $this->assertSame(20, $item->quantity);
+        $this->assertDatabaseHas('stock_movements', [
+            'item_id' => $item->id, 'actor_id' => $admin->id, 'change' => 20,
+            'balance_after' => 20, 'type' => 'adjustment', 'note' => 'Stok awal',
+        ]);
         $this->get(route('items.index', ['location' => $location->id]))->assertOk()->assertSee('Kontainer 01')->assertSee('Lakban');
         $this->get(route('scan.index', ['code' => 'K-01']))->assertOk()->assertSee('Kontainer 01')->assertSee('Stok masuk / keluar langsung');
         $this->get(route('dashboard'))->assertOk()->assertSee('Kontainer 01');
@@ -50,9 +60,10 @@ class LocationManagementTest extends TestCase
             'location_type_id' => $type->id, 'name' => 'Lemari Teknik', 'workflow' => 'loan',
         ])->assertRedirect();
         $location = Location::firstWhere('name', 'Lemari Teknik');
+        $master = ItemMaster::create(['sku' => 'L-01', 'name' => 'Multimeter', 'unit' => 'unit']);
         $this->post(route('items.store'), [
-            'location_id' => $location->id, 'sku' => 'L-01', 'name' => 'Multimeter',
-            'unit' => 'unit', 'quantity' => 3, 'minimum_stock' => 0,
+            'location_id' => $location->id, 'master_item_id' => $master->id,
+            'quantity' => 3, 'minimum_stock' => 0,
         ])->assertRedirect();
         $item = Item::firstWhere('sku', 'L-01');
 
@@ -164,5 +175,26 @@ class LocationManagementTest extends TestCase
         $manager = User::factory()->create()->givePermissionTo(['items.manage', 'items.view']);
         $this->actingAs($manager)->put(route('items.update', $item), [...$form, 'quantity' => 9])->assertForbidden();
         $this->assertSame(8, $item->fresh()->quantity);
+    }
+
+    public function test_stock_initial_quantity_requires_adjust_permission(): void
+    {
+        $manager = User::factory()->create()->givePermissionTo(['items.manage', 'items.view']);
+        $location = Location::firstWhere('name', 'Gudang B');
+        $master = ItemMaster::create(['sku' => 'STK-NEW', 'name' => 'Masker', 'unit' => 'box']);
+        $data = [
+            'location_id' => $location->id, 'master_item_id' => $master->id,
+            'quantity' => 8, 'minimum_stock' => 2,
+        ];
+
+        $form = $this->actingAs($manager)->get(route('items.create', ['location' => $location->id]))->assertOk();
+        $this->assertSame(1, preg_match('/<input id="quantity"[^>]*readonly/', $form->getContent()));
+        $this->actingAs($manager)->post(route('items.store'), $data)->assertForbidden();
+        $this->assertDatabaseMissing('items', ['sku' => 'STK-NEW']);
+        $this->assertSame(0, StockMovement::count());
+
+        $this->post(route('items.store'), [...$data, 'quantity' => 0])->assertRedirect();
+        $this->assertSame(0, Item::firstWhere('sku', 'STK-NEW')->quantity);
+        $this->assertSame(0, StockMovement::count());
     }
 }

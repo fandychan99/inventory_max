@@ -14,6 +14,7 @@ Aplikasi internal berbasis Laravel 12, Blade, MySQL, AdminLTE 4 / Bootstrap 5, d
 
 - **Master jenis lokasi:** Administrator dapat menambah atau mengubah jenis seperti Gudang, Truk, dan Lemari dari halaman **Lokasi & jenis**.
 - **Master lokasi:** Setiap lokasi memiliki nama, jenis, status aktif, dan alur. Contoh: Gudang A, Gudang B, Truk 01, Lemari Peralatan. Jumlah lokasi tidak dibatasi dua. Gudang A dan B dibuat otomatis saat migrasi; barang lama dipetakan ke lokasi tersebut.
+- **Master barang:** Buat kode, nama, satuan, dan keterangan satu kali. Barang yang sama dapat ditempatkan di banyak lokasi dengan SKU identik; jumlah, batas minimum, dan status aktif tetap terpisah per lokasi.
 - **Pinjam kembali:** pemohon mengajukan alat → petugas menyetujui / menolak → petugas mencatat serah terima → petugas mencatat pengembalian. Unit tersedia dihitung dari total unit dikurangi pinjaman yang sedang berjalan.
 - **Permintaan stok:** pemohon mengajukan barang → petugas menyetujui / menolak → petugas mencatat pengeluaran. Stok berkurang saat pengeluaran, dan setiap perubahan stok tercatat dalam mutasi.
 - **Pengecekan rutin:** satu barcode pada lokasi (misalnya truk) membuka seluruh daftar peralatan. Petugas mengisi jumlah ditemukan, kondisi, serta catatan untuk setiap alat. Hasil setiap pemeriksaan tersimpan sebagai transaksi; jumlah standar tidak berubah.
@@ -25,10 +26,10 @@ Administrator dapat memilih **Arsipkan lokasi** untuk menghilangkannya dari kata
 
 ## Scan barang dan label
 
-1. Buat barang dengan kode SKU yang unik. Pada daftar barang, pilih **Label**, lalu cetak dan tempel label barcode Code 128 pada barang atau rak.
+1. Buat **Master barang** dengan SKU unik, lalu pilih **Tempatkan barang** di setiap katalog lokasi yang membutuhkannya. Pada daftar barang, pilih **Label**, lalu cetak dan tempel label barcode Code 128 pada barang atau rak.
 2. Buka **Scan barang**. Scanner USB/Bluetooth yang berfungsi sebagai keyboard dapat mengetik SKU ke kolom kode. Atur scanner agar mengirim tombol **Enter** setelah membaca barcode; jika tidak, tekan **Cari**.
 3. Pada HP, buka halaman yang sama dan tekan **Buka kamera**. Izinkan akses kamera, kemudian arahkan ke barcode Code 128 pada label. Kode QR berisi SKU juga dapat dibaca.
-4. Hasil scan pada lokasi pinjam kembali menampilkan pinjaman yang disetujui untuk **Serahkan** dan pinjaman berjalan untuk **Terima kembali**. Lokasi permintaan stok menampilkan permintaan yang disetujui untuk **Keluarkan barang**, serta form **Masuk / Keluar** langsung dengan jumlah dan alasan.
+4. Jika SKU ada di beberapa lokasi, pilih lokasi yang hendak diproses. Hasil scan pada lokasi pinjam kembali menampilkan pinjaman yang disetujui untuk **Serahkan** dan pinjaman berjalan untuk **Terima kembali**. Lokasi permintaan stok menampilkan permintaan yang disetujui untuk **Keluarkan barang**, serta form **Masuk / Keluar** langsung dengan jumlah dan alasan.
 5. Untuk alur pengecekan, buat lokasi dengan **Barcode lokasi** (contoh `TRUCK-A`). Cetak label dari menu **Pengecekan**, tempel pada truk, lalu scan. Semua alat aktif di truk muncul dalam satu checklist. Catatan wajib jika jumlah ditemukan tidak sesuai atau kondisi rusak. Pemeriksaan ulang pada hari yang sama tetap tersimpan sebagai transaksi baru.
 
 Akses kamera browser pada HP memerlukan **HTTPS** dan izin kamera. Alamat `http://127.0.0.1` hanya berlaku pada komputer yang menjalankan server; untuk HP gunakan alamat server yang dapat dijangkau melalui HTTPS. Scanner USB/Bluetooth tetap dapat digunakan tanpa kamera. Halaman scan dibatasi 120 permintaan per menit per pengguna, sedangkan aksi tulis mengikuti batas 30 per menit.
@@ -77,11 +78,11 @@ Akun dan SKU demo memakai penanda `demo` / `DEMO-` agar mudah dibedakan dari dat
 
 ## Catatan data
 
-Setiap barang berada pada satu lokasi. Barang pada lokasi permintaan stok dibuat dengan saldo 0; tambah stok melalui halaman **Mutasi** agar saldo awal tercatat. Barang tidak dihapus, tetapi dapat dinonaktifkan. Permintaan atau pinjaman lama tetap menyimpan referensi barang.
+Setiap penempatan barang berada pada satu lokasi dan menunjuk satu master barang. Satu master dapat dipakai di beberapa lokasi, sedangkan saldo/jumlah tiap lokasi tetap independen. Pengguna dengan izin `items.manage` dan `stock.adjust` dapat mengisi stok awal saat menempatkan barang pada lokasi permintaan stok; jumlahnya otomatis tercatat sebagai mutasi. Tanpa izin `stock.adjust`, barang dibuat dengan saldo 0 dan stok dapat ditambah kemudian melalui halaman **Mutasi**. Barang tidak dihapus, tetapi dapat dinonaktifkan. Permintaan atau pinjaman lama tetap menyimpan referensi penempatannya.
 
 Pada lokasi pengecekan, `items.quantity` adalah jumlah standar. Setiap hasil menyimpan salinan nama alat, SKU, jumlah standar, jumlah ditemukan, kondisi, catatan, petugas, dan waktu. Hasil tidak mengubah saldo stok atau jumlah standar. Dashboard menunjukkan lokasi pengecekan yang sudah atau belum diperiksa hari ini.
 
-Pada lokasi permintaan stok, halaman katalog menyediakan **Excel lokasi ini** dan **Excel semua stok** untuk akun berizin `stock.export` (termasuk Administrator dan Petugas Gudang B). Ekspor `.xlsx` memuat seluruh barang stok yang tidak diarsipkan, termasuk saldo, batas minimum, dan status. Di halaman **Ubah barang**, akun dengan izin `stock.adjust` dapat mengubah angka stok dengan alasan wajib; selisih dicatat sebagai mutasi.
+Setiap halaman katalog lokasi menyediakan satu tombol **Excel lokasi ini** untuk akun berizin `stock.export` (Administrator dan petugas operasional bawaan). Ekspor `.xlsx` mengikuti pencarian pada lokasi tersebut. Gudang pinjam memuat jumlah total dan tersedia, lokasi stok memuat saldo serta batas minimum, dan lokasi pengecekan memuat jumlah standar. Izin ekspor dapat diubah melalui **Role & akses**. Di halaman **Ubah barang**, akun dengan izin `stock.adjust` dapat mengubah angka stok dengan alasan wajib; selisih dicatat sebagai mutasi.
 
 Setiap pengajuan memuat satu jenis barang dan jumlah unit. Penolakan memerlukan alasan. Pengeluaran stok serta serah terima alat memeriksa ulang ketersediaan di dalam transaksi database sehingga dua permintaan bersamaan tidak mengurangi stok di bawah nol. Login dibatasi 5 percobaan per menit per email dan IP; aksi tulis dibatasi 30 per menit per pengguna.
 
