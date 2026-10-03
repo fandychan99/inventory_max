@@ -30,13 +30,15 @@ flowchart LR
         locationLabel(["Cetak barcode lokasi"])
         exportStock(["Unduh katalog lokasi XLSX"])
         archive(["Arsipkan dan pulihkan lokasi/jenis"])
+        removePlacement(["Hapus penempatan satu lokasi"])
+        removeMaster(["Hapus master semua lokasi"])
     end
 
     applicant --> login & dashboard & catalog & applyLoan & applyStock
     loanOfficer --> login & dashboard & catalog & applyLoan & decideLoan & handover
     stockOfficer --> login & dashboard & catalog & applyStock & decideStock & fulfill & adjust & exportStock
     checkOfficer --> login & dashboard & catalog & inspect & locationLabel
-    admin --> login & dashboard & catalog & applyLoan & decideLoan & handover & applyStock & decideStock & fulfill & adjust & exportStock & locations & archive & items & access & inspect & locationLabel
+    admin --> login & dashboard & catalog & applyLoan & decideLoan & handover & applyStock & decideStock & fulfill & adjust & exportStock & locations & archive & items & removePlacement & removeMaster & access & inspect & locationLabel
 ```
 
 Diagram ini menunjukkan hubungan aktor dan use case. Role dapat diubah melalui Spatie; garis di atas merepresentasikan izin bawaan, bukan izin yang harus tetap pada nama role tersebut.
@@ -72,12 +74,14 @@ classDiagram
         +name
         +unit
         +description
+        +deleted_at
     }
     class Item {
         +master_item_id
         +location_id
         +quantity
         +minimum_stock
+        +deleted_at
         +available()
     }
     class Loan {

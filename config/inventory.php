@@ -7,6 +7,7 @@ return [
         'dashboard.view' => 'Lihat ringkasan',
         'items.view' => 'Lihat katalog barang',
         'items.manage' => 'Kelola data barang',
+        'items.delete-master' => 'Hapus master barang di semua lokasi',
         'stock.adjust' => 'Sesuaikan stok lokasi permintaan',
         'stock.export' => 'Unduh katalog lokasi ke Excel',
         'loans.create' => 'Ajukan peminjaman',

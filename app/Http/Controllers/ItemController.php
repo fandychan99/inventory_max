@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\ItemMaster;
 use App\Models\Location;
 use App\Services\InventoryWorkflow;
+use App\Services\CatalogRemoval;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,11 +21,13 @@ class ItemController extends Controller
         $location = $request->filled('location')
             ? Location::visible()->findOrFail($request->integer('location'))
             : Location::visible()->orderBy('id')->firstOrFail();
-        $items = Item::where('location_id', $location->id)->when($request->query('q'), function ($query, $q) {
+        $archived = $request->boolean('archived') && $request->user()->can('items.manage');
+        $items = Item::query()->when($archived, fn ($query) => $query->onlyTrashed())
+            ->where('location_id', $location->id)->when($request->query('q'), function ($query, $q) {
             $query->where(fn ($sub) => $sub->where('name', 'like', "%{$q}%")->orWhere('sku', 'like', "%{$q}%"));
         })->orderBy('name')->paginate(15)->withQueryString();
 
-        return view('items.index', compact('items', 'location'));
+        return view('items.index', compact('items', 'location', 'archived'));
     }
 
     public function create(Request $request): View
@@ -37,7 +40,7 @@ class ItemController extends Controller
         return view('items.form', [
             'item' => new Item(['location_id' => $location->id]),
             'location' => $location,
-            'masters' => ItemMaster::whereDoesntHave('items', fn ($query) => $query->where('location_id', $location->id))
+            'masters' => ItemMaster::whereDoesntHave('items', fn ($query) => $query->withTrashed()->where('location_id', $location->id))
                 ->orderBy('name')->get(),
         ]);
     }
@@ -124,6 +127,33 @@ class ItemController extends Controller
         return back()->with('success', 'Stok dan riwayat mutasi berhasil diperbarui.');
     }
 
+    public function destroy(Item $item, CatalogRemoval $removal): RedirectResponse
+    {
+        abort_if($item->location->archived_at, 404);
+        $locationId = $item->location_id;
+        $archived = $removal->removePlacement($item);
+
+        return redirect()->route('items.index', ['location' => $locationId])
+            ->with('success', $archived
+                ? 'Barang diarsipkan dari lokasi ini. Riwayat transaksinya tetap tersimpan.'
+                : 'Barang dihapus dari lokasi ini. Master barang tetap tersedia.');
+    }
+
+    public function restore(int $item): RedirectResponse
+    {
+        $placement = DB::transaction(function () use ($item): Item {
+            $placement = Item::onlyTrashed()->with('location', 'master')->lockForUpdate()->findOrFail($item);
+            abort_if($placement->location->archived_at || $placement->master->trashed(), 422);
+            $placement->restore();
+            $placement->update($placement->master->only(['sku', 'name', 'unit', 'description']));
+
+            return $placement;
+        });
+
+        return redirect()->route('items.index', ['location' => $placement->location_id, 'archived' => 1])
+            ->with('success', 'Penempatan barang berhasil dipulihkan.');
+    }
+
     private function validated(Request $request, ?Item $item = null): array
     {
         $rules = [
@@ -133,7 +163,7 @@ class ItemController extends Controller
         ];
         if ($item === null) {
             $rules['master_item_id'] = [
-                'required', 'integer', Rule::exists('item_masters', 'id'),
+                'required', 'integer', Rule::exists('item_masters', 'id')->whereNull('deleted_at'),
                 Rule::unique('items', 'master_item_id')->where('location_id', $request->input('location_id')),
             ];
         }

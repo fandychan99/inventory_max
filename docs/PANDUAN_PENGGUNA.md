@@ -38,6 +38,8 @@ Nama role bawaan merupakan contoh penugasan. Administrator dapat membuat role la
 4. Pilih **Tempatkan barang**. Di daftar lokasi, pilih **Ubah** untuk memperbarui jumlah, batas minimum, atau status aktif. Ubah kode, nama, satuan, dan keterangan melalui **Master barang**; perubahan berlaku di semua lokasi. Lokasi barang tidak bisa dipindah lewat formulir ini.
 5. Pilih **Label**, lalu **Cetak label**. Tempel barcode Code 128 pada barang atau rak. Untuk lokasi alur pengecekan, cetak **Barcode lokasi** dari menu **Pengecekan**, lalu tempel satu label pada truk/lemari.
 
+Pilih **Hapus dari lokasi** untuk melepas satu penempatan tanpa mengubah master atau lokasi lain. Administrator dapat memilih **Hapus master** untuk semua lokasi sekaligus (izin `items.delete-master`). Jumlah alat/stok harus 0 dan transaksi berjalan harus selesai. Data tanpa riwayat dihapus permanen; data bersejarah masuk **Arsip barang** atau **Arsip master** agar transaksi lama tetap terbaca. Pulihkan master sebelum memulihkan penempatannya.
+
 **Tersedia** pada alat pinjam kembali = total alat dikurangi jumlah yang berstatus **Dipinjam**. Pada barang stok, **Tersedia** sama dengan saldo saat ini. Pengajuan yang baru disetujui belum mengurangi ketersediaan; pemeriksaan ulang dilakukan ketika alat diserahkan atau barang dikeluarkan.
 
 ## 4. Mencatat stok masuk, keluar, dan koreksi

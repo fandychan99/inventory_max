@@ -26,6 +26,8 @@ rectangle "TanggapEquip" {
   usecase "Cetak barcode lokasi" as UC15
   usecase "Unduh katalog lokasi XLSX" as UC16
   usecase "Arsipkan / pulihkan lokasi dan jenis" as UC17
+  usecase "Hapus penempatan satu lokasi" as UC18
+  usecase "Hapus master semua lokasi" as UC19
 }
 
 Pemohon --> UC01
@@ -73,4 +75,6 @@ Admin --> UC14
 Admin --> UC15
 Admin --> UC16
 Admin --> UC17
+Admin --> UC18
+Admin --> UC19
 @enduml

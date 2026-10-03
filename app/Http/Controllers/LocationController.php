@@ -36,7 +36,7 @@ class LocationController extends Controller
     {
         abort_if($location->archived_at, 404);
         $data = $this->validated($request, $location);
-        if ($data['workflow'] !== $location->workflow && ($location->items()->exists() || $location->inspections()->exists())) {
+        if ($data['workflow'] !== $location->workflow && ($location->items()->withTrashed()->exists() || $location->inspections()->exists())) {
             throw ValidationException::withMessages(['workflow' => 'Alur lokasi tidak dapat diubah karena sudah memiliki barang atau riwayat pengecekan.']);
         }
         $data['scan_code'] = $data['workflow'] === Location::WORKFLOW_CHECKLIST ? $data['scan_code'] : null;

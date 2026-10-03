@@ -47,6 +47,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/item-masters', [ItemMasterController::class, 'store'])->middleware(['permission:items.manage', 'throttle:operations'])->name('item-masters.store');
     Route::get('/item-masters/{itemMaster}/edit', [ItemMasterController::class, 'edit'])->middleware('permission:items.manage')->name('item-masters.edit');
     Route::put('/item-masters/{itemMaster}', [ItemMasterController::class, 'update'])->middleware(['permission:items.manage', 'throttle:operations'])->name('item-masters.update');
+    Route::delete('/item-masters/{itemMaster}', [ItemMasterController::class, 'destroy'])->middleware(['permission:items.delete-master', 'throttle:operations'])->name('item-masters.destroy');
+    Route::post('/item-masters/{itemMaster}/restore', [ItemMasterController::class, 'restore'])->middleware(['permission:items.delete-master', 'throttle:operations'])->name('item-masters.restore');
 
     Route::get('/items', [ItemController::class, 'index'])->middleware('permission:items.view')->name('items.index');
     Route::get('/items/export/location', CatalogExportController::class)->middleware(['permission:items.view', 'permission:stock.export', 'throttle:operations'])->name('items.export-location');
@@ -54,6 +56,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/items', [ItemController::class, 'store'])->middleware(['permission:items.manage', 'throttle:operations'])->name('items.store');
     Route::get('/items/{item}/edit', [ItemController::class, 'edit'])->middleware('permission:items.manage')->name('items.edit');
     Route::put('/items/{item}', [ItemController::class, 'update'])->middleware(['permission:items.manage', 'throttle:operations'])->name('items.update');
+    Route::delete('/items/{item}', [ItemController::class, 'destroy'])->middleware(['permission:items.manage', 'throttle:operations'])->name('items.destroy');
+    Route::post('/items/{item}/restore', [ItemController::class, 'restore'])->middleware(['permission:items.manage', 'throttle:operations'])->name('items.restore');
     Route::get('/items/{item}/movements', [ItemController::class, 'movements'])->middleware('permission:items.view')->name('items.movements');
     Route::get('/items/{item}/label', [ItemController::class, 'label'])->middleware('permission:items.view')->name('items.label');
     Route::post('/items/{item}/adjust', [ItemController::class, 'adjust'])->middleware(['permission:stock.adjust', 'throttle:operations'])->name('items.adjust');

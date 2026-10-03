@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ItemMaster;
 use App\Models\Location;
+use App\Services\CatalogRemoval;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,13 +16,14 @@ class ItemMasterController extends Controller
 {
     public function index(Request $request): View
     {
-        $masters = ItemMaster::query()
+        $archived = $request->boolean('archived') && $request->user()->can('items.delete-master');
+        $masters = ItemMaster::query()->when($archived, fn ($query) => $query->onlyTrashed())
             ->when($request->query('q'), fn ($query, $search) => $query->where(fn ($match) => $match
                 ->where('sku', 'like', "%{$search}%")
                 ->orWhere('name', 'like', "%{$search}%")))
             ->withCount('items')->orderBy('name')->paginate(20)->withQueryString();
 
-        return view('item-masters.index', compact('masters'));
+        return view('item-masters.index', compact('masters', 'archived'));
     }
 
     public function create(): View
@@ -50,6 +52,24 @@ class ItemMasterController extends Controller
         });
 
         return redirect()->route('item-masters.index')->with('success', 'Master barang dan seluruh penempatannya berhasil diperbarui.');
+    }
+
+    public function destroy(ItemMaster $itemMaster, CatalogRemoval $removal): RedirectResponse
+    {
+        $archived = $removal->removeMaster($itemMaster);
+
+        return redirect()->route('item-masters.index')->with('success', $archived
+            ? 'Master dan seluruh penempatannya diarsipkan. Riwayat transaksi tetap tersimpan.'
+            : 'Master barang dan seluruh penempatannya berhasil dihapus.');
+    }
+
+    public function restore(int $itemMaster): RedirectResponse
+    {
+        $master = ItemMaster::onlyTrashed()->findOrFail($itemMaster);
+        $master->restore();
+
+        return redirect()->route('item-masters.index', ['archived' => 1])
+            ->with('success', 'Master barang dipulihkan. Penempatan yang diarsipkan dapat dipulihkan di katalog lokasi.');
     }
 
     private function validated(Request $request, ?ItemMaster $master = null): array

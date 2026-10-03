@@ -35,6 +35,8 @@ Role di tabel adalah penugasan awal. Sistem memutuskan hak dari **permission**, 
 | UC-15 | Cetak barcode lokasi | Petugas pemeriksaan atau Administrator | `checks.view` | Satu label Code 128 mewakili satu truk/lemari. |
 | UC-16 | Unduh katalog lokasi ke Excel | Petugas operasional atau Administrator | `items.view`, `stock.export` | XLSX untuk satu lokasi terunduh dengan kolom sesuai alurnya. |
 | UC-17 | Arsipkan/pulihkan lokasi dan jenis | Administrator | `locations.manage` | Entri hilang dari katalog/pilihan tanpa menghapus transaksi lama. |
+| UC-18 | Hapus/arsipkan penempatan lokasi | Pengelola barang | `items.manage` | Barang hilang dari satu katalog, master dan lokasi lain tetap. |
+| UC-19 | Hapus/arsipkan master seluruh lokasi | Administrator | `items.delete-master` | Master dan semua penempatannya hilang dari katalog aktif. |
 
 ## Rincian use case utama
 
@@ -79,6 +81,20 @@ Role di tabel adalah penugasan awal. Sistem memutuskan hak dari **permission**, 
 - **Alur utama:** pada **Lokasi & jenis**, pilih **Arsipkan lokasi** → sistem menandai lokasi diarsipkan dan nonaktif → lokasi hilang dari katalog dan pilihan operasional. Setelah semua lokasi suatu jenis diarsipkan, pilih **Arsipkan jenis**. Gunakan bagian arsip untuk memulihkan jenis, kemudian lokasi.
 - **Alternatif:** jenis masih mempunyai lokasi yang terlihat, atau lokasi dipulihkan ketika jenisnya masih diarsipkan; sistem menolak dan menjelaskan urutannya.
 - **Hasil:** data barang dan transaksi lama tetap tersimpan; transaksi berjalan masih dapat diselesaikan dari detailnya. Lokasi yang dipulihkan masih nonaktif sampai diaktifkan secara sengaja.
+
+### UC-18 — Hapus penempatan pada satu lokasi
+
+- **Prasyarat:** pengguna memiliki `items.manage` dan barang masih ada dalam katalog lokasi tersebut.
+- **Alur utama:** pilih **Hapus dari lokasi** pada baris barang → konfirmasi → sistem memeriksa saldo/jumlah alat dan transaksi berjalan → penempatan hilang dari katalog lokasi ini. Master dan penempatan di lokasi lain tidak berubah.
+- **Alternatif:** jika ada riwayat, penempatan masuk **Arsip barang** dan dapat dipulihkan; tanpa riwayat, penempatan dihapus permanen. Saldo/jumlah alat positif pada alur pinjam atau stok, maupun pengajuan yang belum selesai, menolak seluruh tindakan.
+- **Hasil:** katalog, scan, dan ekspor hanya menampilkan penempatan aktif; halaman transaksi lama tetap menunjukkan barang yang diarsipkan.
+
+### UC-19 — Hapus master dari semua lokasi
+
+- **Prasyarat:** pengguna memiliki `items.delete-master` (Administrator bawaan).
+- **Alur utama:** buka **Master barang** → pilih **Hapus master** → konfirmasi → sistem memeriksa semua penempatan dalam satu transaksi dan menghilangkan semuanya dari katalog aktif.
+- **Alternatif:** jika ada saldo atau transaksi berjalan pada salah satu lokasi, tidak ada data yang dihapus. Jika ada riwayat, master dan penempatan terkait diarsipkan; bila semua tanpa riwayat, data dihapus permanen.
+- **Hasil:** master hilang dari pilihan penempatan baru. Master bersejarah dapat dipulihkan melalui **Arsip master**, lalu penempatannya melalui **Arsip barang**.
 
 ### UC-11 dan UC-12 — Mutasi dan pemindaian
 

@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         $names = [
-            'dashboard.view', 'items.view', 'items.manage', 'stock.adjust', 'stock.export',
+            'dashboard.view', 'items.view', 'items.manage', 'items.delete-master', 'stock.adjust', 'stock.export',
             'loans.create', 'loans.view-all', 'loans.approve', 'loans.handover',
             'requests.create', 'requests.view-all', 'requests.approve', 'requests.fulfill',
             'checks.view', 'checks.perform', 'access.manage', 'locations.manage',

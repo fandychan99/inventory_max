@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Item extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['location_id', 'master_item_id', 'sku', 'name', 'unit', 'quantity', 'minimum_stock', 'description', 'is_active'];
 
     protected static function booted(): void
@@ -41,7 +44,7 @@ class Item extends Model
 
     public function master(): BelongsTo
     {
-        return $this->belongsTo(ItemMaster::class, 'master_item_id');
+        return $this->belongsTo(ItemMaster::class, 'master_item_id')->withTrashed();
     }
 
     public function loans(): HasMany
@@ -57,6 +60,11 @@ class Item extends Model
     public function movements(): HasMany
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    public function inspectionEntries(): HasMany
+    {
+        return $this->hasMany(InspectionEntry::class);
     }
 
     public function getAvailableAttribute(): int
