@@ -28,13 +28,13 @@ Administrator dapat memilih **Arsipkan lokasi** untuk menghilangkannya dari kata
 
 1. Buat **Master barang** dengan SKU unik, lalu pilih **Tempatkan barang** di setiap katalog lokasi yang membutuhkannya. Pada daftar barang, pilih **Label**, lalu cetak dan tempel label barcode Code 128 pada barang atau rak.
 2. Buka **Scan barang**. Scanner USB/Bluetooth yang berfungsi sebagai keyboard dapat mengetik SKU ke kolom kode. Atur scanner agar mengirim tombol **Enter** setelah membaca barcode; jika tidak, tekan **Cari**.
-3. Pada HP, buka halaman yang sama dan tekan **Buka kamera**. Izinkan akses kamera, kemudian arahkan ke barcode Code 128 pada label. Kode QR berisi SKU juga dapat dibaca.
+3. Pada laptop atau HP, tekan **Buka kamera** dan izinkan akses, lalu arahkan kamera ke Code 128 atau QR berisi SKU/kode lokasi. Laptop memakai kamera depan secara otomatis; jika tersedia beberapa kamera, pilih sumber yang tepat. Pilih **Unggah gambar barcode** untuk membaca foto/screenshot PNG, JPG, WebP, atau GIF (maksimal 10 MB). Gambar diproses di browser tanpa dikirim ke server.
 4. Jika SKU ada di beberapa lokasi, pilih lokasi yang hendak diproses. Hasil scan pada lokasi pinjam kembali menampilkan pinjaman yang disetujui untuk **Serahkan** dan pinjaman berjalan untuk **Terima kembali**. Lokasi permintaan stok menampilkan permintaan yang disetujui untuk **Keluarkan barang**, serta form **Masuk / Keluar** langsung dengan jumlah dan alasan.
 5. Untuk alur pengecekan, buat lokasi dengan **Barcode lokasi** (contoh `TRUCK-A`). Cetak label dari menu **Pengecekan**, tempel pada truk, lalu scan. Semua alat aktif di truk muncul dalam satu checklist. Catatan wajib jika jumlah ditemukan tidak sesuai atau kondisi rusak. Pemeriksaan ulang pada hari yang sama tetap tersimpan sebagai transaksi baru.
 
-Akses kamera browser pada HP memerlukan **HTTPS** dan izin kamera. Alamat `http://127.0.0.1` hanya berlaku pada komputer yang menjalankan server; untuk HP gunakan alamat server yang dapat dijangkau melalui HTTPS. Scanner USB/Bluetooth tetap dapat digunakan tanpa kamera. Halaman scan dibatasi 120 permintaan per menit per pengguna, sedangkan aksi tulis mengikuti batas 30 per menit.
+Akses kamera browser memerlukan **HTTPS** atau `localhost`/`127.0.0.1`, izin browser, serta kamera yang terdeteksi perangkat. Alamat `http://127.0.0.1` hanya berlaku pada komputer yang menjalankan server; untuk HP gunakan alamat server yang dapat dijangkau melalui HTTPS. Unggah gambar dan scanner USB/Bluetooth dapat digunakan tanpa kamera. Halaman scan dibatasi 120 permintaan per menit per pengguna, sedangkan aksi tulis mengikuti batas 30 per menit.
 
-Jika kamera tidak terbuka, halaman menampilkan penyebab umum: perangkat tidak memiliki kamera, izin browser ditolak, atau kamera sedang digunakan aplikasi lain. Pemindai memilih kamera belakang bila tersedia. Komputer preview tanpa webcam tetap dapat memakai scanner USB/Bluetooth.
+Jika kamera tidak terbuka, halaman menampilkan penyebab umum: perangkat tidak memiliki kamera, izin browser/perangkat ditolak, atau kamera sedang digunakan aplikasi lain. Pilih kamera lain pada daftar bila tersedia. Komputer tanpa webcam tetap dapat memakai unggah gambar atau scanner USB/Bluetooth.
 
 ## Persyaratan
 

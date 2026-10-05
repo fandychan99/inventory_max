@@ -237,9 +237,11 @@ sequenceDiagram
 flowchart TD
     start([Buka Scan barang]) --> source{Sumber kode}
     source -->|Scanner USB/Bluetooth| input[Isi SKU lalu Enter atau Cari]
-    source -->|Kamera HP HTTPS| camera[Buka kamera dan baca Code 128/QR]
+    source -->|Kamera laptop atau HP| camera[Buka kamera dan baca Code 128/QR]
+    source -->|Gambar barcode| file[Pilih foto atau screenshot]
     input --> lookup[Cari lokasi berdasarkan barcode atau Item berdasarkan SKU]
     camera --> lookup
+    file --> lookup
     lookup --> found{Kode ditemukan?}
     found -->|Tidak| retry[Tampilkan kode tidak ditemukan]
     found -->|Ya| multiple{SKU di beberapa lokasi?}
@@ -256,7 +258,7 @@ flowchart TD
     post --> result([Transaksi atau hasil pengecekan tersimpan])
 ```
 
-Scan adalah pencarian item atau lokasi. SKU barang bisa dipakai pada beberapa lokasi sehingga pengguna memilih lokasi sebelum tindakan; barcode lokasi checklist tetap langsung membuka lokasi tersebut. Tindakan pada hasil scan mengikuti izin dan validasi server. Rincian kondisi ada di [use case](USE_CASES.md) dan [panduan kode](PANDUAN_KODE.md).
+Scan adalah pencarian item atau lokasi. Foto diproses lokal di browser; kode yang terbaca mengikuti alur yang sama dengan kamera dan scanner keyboard. SKU barang bisa dipakai pada beberapa lokasi sehingga pengguna memilih lokasi sebelum tindakan; barcode lokasi checklist tetap langsung membuka lokasi tersebut. Tindakan pada hasil scan mengikuti izin dan validasi server. Rincian kondisi ada di [use case](USE_CASES.md) dan [panduan kode](PANDUAN_KODE.md).
 
 ## 8. Diagram urutan pengecekan lokasi
 

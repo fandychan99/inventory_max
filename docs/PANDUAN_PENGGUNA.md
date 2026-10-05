@@ -79,13 +79,14 @@ Persetujuan sendiri belum mengurangi stok. Daftar **Permintaan** dapat difilter 
 
 Pengecekan tidak otomatis mengubah jumlah standar, stok, atau transaksi pinjam. Bila ada selisih, tindak lanjuti secara operasional dan ubah jumlah standar pada penempatan lokasi bila memang berubah.
 
-## 8. Menggunakan scanner dan kamera HP
+## 8. Menggunakan scanner, kamera, dan gambar barcode
 
 1. Buka **Scan barang**. Dengan scanner USB/Bluetooth yang bertindak sebagai keyboard, fokuskan kolom **Kode pada label** lalu pindai barcode. Atur scanner agar mengirim **Enter**; jika tidak, pilih **Cari**.
-2. Pada HP, buka alamat aplikasi melalui **HTTPS**, pilih **Buka kamera**, izinkan akses, lalu arahkan kamera ke barcode Code 128. Kode QR yang hanya berisi kode valid juga dapat dibaca. Jika satu SKU berada di beberapa lokasi, pilih lokasi yang tepat sebelum melakukan transaksi. Barcode lokasi checklist langsung membuka daftar peralatan lokasi tersebut; kamera dapat ditutup dengan **Tutup kamera**.
-3. Pilih tindakan yang tersedia sesuai alur lokasi dan izin akun: **Serahkan/Terima kembali** untuk pinjaman, **Keluarkan barang** untuk permintaan yang disetujui, mutasi stok langsung, atau **Simpan hasil pengecekan** untuk lokasi checklist.
+2. Pada laptop atau HP, pilih **Buka kamera** dan izinkan akses. Laptop memakai kamera depan, HP memakai kamera belakang bila tersedia. Jika perangkat memiliki beberapa kamera, pilih sumber lain pada daftar kamera. Arahkan ke barcode Code 128 atau QR berisi SKU/kode lokasi; pilih **Tutup kamera** setelah selesai.
+3. Sebagai alternatif, pilih **Unggah gambar barcode** lalu ambil foto/screenshot PNG, JPG, WebP, atau GIF (maksimal 10 MB). Gambar dibaca di browser tanpa dikirim ke server. Jika gagal terbaca, gunakan gambar tajam dengan kode utuh. Kode yang terbaca membuka hasil yang sama seperti scan kamera.
+4. Jika satu SKU berada di beberapa lokasi, pilih lokasi yang tepat. Barcode lokasi checklist langsung membuka daftar peralatan. Pilih tindakan yang tersedia sesuai alur dan izin: **Serahkan/Terima kembali**, **Keluarkan barang**, mutasi stok, atau **Simpan hasil pengecekan**.
 
-`http://127.0.0.1:8000` hanya menunjuk komputer tempat server berjalan. HP perlu alamat server yang dapat dijangkau dan HTTPS agar browser memberi akses kamera. Jika muncul pesan kamera tidak bisa dibuka, periksa izin situs, kamera yang sedang dipakai aplikasi lain, dan HTTPS. Scanner USB/Bluetooth tetap dapat digunakan tanpa kamera. Jika SKU tidak ditemukan, cocokkan kode yang terbaca dengan katalog.
+`http://127.0.0.1:8000` hanya menunjuk komputer tempat server berjalan. HP perlu alamat server yang dapat dijangkau dan HTTPS agar browser memberi akses kamera; pada laptop, `localhost` atau `127.0.0.1` juga dapat memakai kamera. Jika kamera gagal, periksa izin browser dan privasi perangkat, kamera yang dipakai aplikasi lain, serta apakah webcam terdeteksi. Unggah gambar dan scanner USB/Bluetooth tetap dapat digunakan tanpa kamera.
 
 ## 9. Mengelola akun dan hak akses (Administrator)
 

@@ -6,9 +6,15 @@
     <div class="col-xl-5"><div class="surface"><div class="surface-head"><h2>Baca kode</h2></div><div class="surface-body">
         <form action="{{ route('scan.index') }}" method="get" id="scan-form"><label class="form-label" for="scan-code">Kode pada label</label><div class="input-group"><input id="scan-code" name="code" class="form-control form-control-lg" value="{{ $code }}" placeholder="Arahkan scanner ke label" maxlength="80" autocomplete="off" required autofocus><button class="btn btn-primary" type="submit">Cari</button></div><p class="form-hint mt-2 mb-0">Scanner biasanya mengirim Enter otomatis. Jika tidak, tekan tombol Cari.</p></form>
         <div class="scan-divider"><span>ATAU</span></div>
-        <div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary" id="camera-start"><i class="bi bi-camera me-1"></i> Buka kamera</button><button type="button" class="btn btn-outline-secondary d-none" id="camera-stop">Tutup kamera</button></div>
-        <p id="camera-status" class="form-hint mt-2 mb-0" role="status" aria-live="polite">Kamera hanya aktif saat tombol ditekan.</p>
-        <div id="camera-reader" class="scanner-reader mt-3" aria-label="Pratinjau kamera pemindai"></div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-outline-primary" id="camera-start"><i class="bi bi-camera me-1"></i> Buka kamera</button>
+            <button type="button" class="btn btn-outline-secondary d-none" id="camera-stop">Tutup kamera</button>
+            <label class="btn btn-outline-primary mb-0" for="barcode-image"><i class="bi bi-image me-1"></i> Unggah gambar barcode</label>
+            <input id="barcode-image" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif" aria-label="Pilih gambar barcode atau QR dari perangkat">
+        </div>
+        <select id="camera-select" class="form-select mt-2 d-none" aria-label="Pilih kamera"></select>
+        <p id="camera-status" class="form-hint mt-2 mb-0" role="status" aria-live="polite">Buka kamera laptop/HP, atau pilih foto barcode maupun QR. Gambar dibaca di browser dan tidak dikirim ke server.</p>
+        <div id="camera-reader" class="scanner-reader mt-3" aria-label="Pratinjau kamera atau gambar barcode"></div>
     </div></div></div>
     <div class="col-xl-7">
         @if($code !== '' && $matches->isEmpty())<div class="surface"><div class="surface-body"><div class="page-eyebrow">KODE TIDAK DITEMUKAN</div><h2 class="h5">Tidak ada barang atau lokasi untuk “{{ $code }}”</h2><p class="text-secondary mb-0">Periksa kode barang atau barcode lokasi, lalu scan ulang.</p></div></div>

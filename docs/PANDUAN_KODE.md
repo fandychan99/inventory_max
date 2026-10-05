@@ -5,7 +5,7 @@ Dokumen ini memetakan implementasi yang ada pada repositori, bukan rancangan fit
 ## Teknologi dan persiapan
 
 - Backend: PHP 8.2+, Laravel 12, Eloquent, Blade, MySQL. Role/permission: Spatie Laravel Permission 6.
-- Frontend: AdminLTE 4, Bootstrap 5, Bootstrap Icons, Vite 6, `html5-qrcode` untuk scan kamera, `JsBarcode` untuk label Code 128.
+- Frontend: AdminLTE 4, Bootstrap 5, Bootstrap Icons, Vite 6, `html5-qrcode` untuk kamera dan gambar barcode, `JsBarcode` untuk label Code 128.
 - Pengujian: PHPUnit melalui `php artisan test`; pengujian fitur berada di `tests/Feature/`.
 
 Untuk instalasi MySQL lokal, buat database kosong, salin `.env.example` menjadi `.env`, isi kredensial `DB_*`, lalu isi `INITIAL_ADMIN_EMAIL` dan `INITIAL_ADMIN_PASSWORD` untuk pembuatan akun awal. Jalankan dari akar proyek:
@@ -38,7 +38,7 @@ Untuk skenario contoh, jalankan `php artisan db:seed --class=DemoSeeder` setelah
 | `database/migrations/` | Skema pengguna, izin Spatie, inventaris, dan migrasi ke lokasi dinamis. |
 | `database/seeders/DatabaseSeeder.php` | Daftar izin, role bawaan, serta akun awal dari konfigurasi. |
 | `resources/views/` | Tampilan Blade; `layouts/app.blade.php` menentukan menu sesuai izin. |
-| `resources/js/` | Inisialisasi AdminLTE/Bootstrap, scan kamera, pembuatan barcode. |
+| `resources/js/` | Inisialisasi AdminLTE/Bootstrap, scan kamera/gambar, pembuatan barcode. |
 | `resources/css/app.css` | Tema dan aturan cetak label. |
 | `tests/Feature/` | Cakupan transaksi, lokasi, scanner, izin, dan rate limit. |
 
@@ -87,7 +87,7 @@ Arsip lokasi mengisi `archived_at` dan membuat `is_active=false`. `scopeVisible(
 
 ## Scan dan label
 
-`resources/js/app.js` memuat modul `scan.js` dan `label.js` hanya bila elemen halaman terkait ada. `scan.js` memanggil `html5-qrcode` setelah pengguna menekan **Buka kamera**, memilih kamera belakang bila ada, menerima Code 128/QR berisi kode, memvalidasi bentuknya, lalu mengirim form GET `/scan?code=...`. Scanner HID USB/Bluetooth memakai input yang sama dan dapat mengirim Enter. Kamera memerlukan secure context/HTTPS pada HP. `ScanController` mencari `Location::scan_code` lebih dahulu, kemudian semua `Item` dengan SKU tersebut. Bila lebih dari satu penempatan ditemukan, pengguna harus memilih lokasi melalui `item` ID yang diverifikasi terhadap kode hasil scan. Kode lokasi checklist membuka seluruh daftar peralatan. Tindakan tetap memerlukan POST dengan autentikasi, CSRF, izin, dan validasi server. `label.js` menggambar Code 128 pada halaman label barang maupun lokasi dan memanggil `window.print()`.
+`resources/js/app.js` memuat modul `scan.js` dan `label.js` hanya bila elemen halaman terkait ada. `scan.js` memakai `Html5Qrcode.start()` dengan kamera depan pada desktop dan kamera belakang pada perangkat sentuh, serta daftar perangkat bila lebih dari satu. Kamera memerlukan secure context (HTTPS atau localhost), izin browser/OS, dan perangkat yang terdeteksi. Pilihan **Unggah gambar barcode** memakai `Html5Qrcode.scanFile()` untuk PNG/JPG/WebP/GIF maksimal 10 MB; file dibaca lokal dan tidak dikirim ke server. Kedua cara membaca Code 128/QR, memvalidasi kode, lalu mengirim form GET `/scan?code=...`. Scanner HID USB/Bluetooth memakai input yang sama dan dapat mengirim Enter. `ScanController` mencari `Location::scan_code` lebih dahulu, kemudian semua `Item` dengan SKU tersebut. Bila lebih dari satu penempatan ditemukan, pengguna harus memilih lokasi melalui `item` ID yang diverifikasi terhadap kode hasil scan. Kode lokasi checklist membuka seluruh daftar peralatan. Tindakan tetap memerlukan POST dengan autentikasi, CSRF, izin, dan validasi server. `label.js` menggambar Code 128 pada halaman label barang maupun lokasi dan memanggil `window.print()`.
 
 ## Pola perubahan fitur
 

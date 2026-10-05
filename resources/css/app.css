@@ -82,6 +82,7 @@ body { background: var(--color-paper); color: var(--color-ink); font-family: var
 .scan-item-name { font: normal 1.75rem/1.15 var(--font-display); margin: 0; overflow-wrap: anywhere; }
 .scanner-reader:empty { display: none; }
 .scanner-reader video { max-width: 100%; }
+.scanner-reader canvas { max-width: 100%; height: auto; }
 .label-page { background: var(--color-paper); }
 .label-sheet { max-width: 90mm; padding: 7mm; background: var(--color-surface); border: 1px solid var(--color-line); color: var(--color-ink); }
 .label-sheet h1 { font: normal 1.25rem/1.2 var(--font-display); margin: .5rem 0 .9rem; overflow-wrap: anywhere; }

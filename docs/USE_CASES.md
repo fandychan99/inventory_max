@@ -2,7 +2,7 @@
 
 ## Ruang lingkup dan aktor
 
-Sistem mengelola banyak lokasi. Setiap lokasi memilih salah satu alur: **pinjam kembali** untuk alat, **permintaan stok** untuk barang yang saldonya berkurang saat dikeluarkan, atau **pengecekan** untuk daftar peralatan tetap yang diperiksa berkala. Gudang A/B adalah data awal, bukan batas jumlah lokasi. Scanner USB/Bluetooth dan kamera HP adalah cara memasukkan SKU atau satu barcode lokasi; keputusan transaksi tetap dibuat pengguna yang telah masuk.
+Sistem mengelola banyak lokasi. Setiap lokasi memilih salah satu alur: **pinjam kembali** untuk alat, **permintaan stok** untuk barang yang saldonya berkurang saat dikeluarkan, atau **pengecekan** untuk daftar peralatan tetap yang diperiksa berkala. Gudang A/B adalah data awal, bukan batas jumlah lokasi. Scanner USB/Bluetooth, kamera laptop/HP, dan gambar barcode adalah cara memasukkan SKU atau satu barcode lokasi; keputusan transaksi tetap dibuat pengguna yang telah masuk.
 
 | Aktor | Tanggung jawab |
 | --- | --- |
@@ -99,8 +99,8 @@ Role di tabel adalah penugasan awal. Sistem memutuskan hak dari **permission**, 
 ### UC-11 dan UC-12 — Mutasi dan pemindaian
 
 - **Prasyarat:** pengguna sudah masuk. Untuk mutasi stok perlu `stock.adjust`; untuk serah terima atau pemenuhan perlu izin aksi masing-masing.
-- **Alur utama:** pengguna membuka **Scan barang** → scanner keyboard mengisi kode dan Enter, atau kamera HP membaca Code 128/QR → sistem mencari barcode lokasi checklist atau semua penempatan item berdasarkan SKU → bila beberapa lokasi memakai SKU yang sama, pengguna memilih lokasi → pengguna memilih aksi yang tersedia. Untuk stok langsung, pilih arah masuk/keluar, jumlah, dan alasan → sistem menyimpan saldo serta mutasi. Barcode lokasi membuka UC-14.
-- **Alternatif:** SKU tidak ditemukan; kamera tidak diizinkan/tidak tersedia; saldo akan negatif; transaksi yang diharapkan belum disetujui; pengguna tidak punya izin. Sistem menampilkan pesan atau menolak aksi sesuai kondisi.
+- **Alur utama:** pengguna membuka **Scan barang** → scanner keyboard mengisi kode dan Enter, kamera laptop/HP membaca Code 128/QR, atau pengguna memilih gambar barcode dari perangkat → sistem mencari barcode lokasi checklist atau semua penempatan item berdasarkan SKU → bila beberapa lokasi memakai SKU yang sama, pengguna memilih lokasi → pengguna memilih aksi yang tersedia. Untuk stok langsung, pilih arah masuk/keluar, jumlah, dan alasan → sistem menyimpan saldo serta mutasi. Barcode lokasi membuka UC-14.
+- **Alternatif:** SKU tidak ditemukan; kamera tidak diizinkan/tidak tersedia; gambar tidak memuat kode yang terbaca; saldo akan negatif; transaksi yang diharapkan belum disetujui; pengguna tidak punya izin. Sistem menampilkan pesan atau menolak aksi sesuai kondisi. Gambar diproses di browser dan tidak disimpan di server.
 - **Hasil:** scan sendiri tidak mengubah data. Perubahan terjadi hanya setelah pengguna mengirim tindakan POST yang diizinkan.
 
 ### UC-14 dan UC-15 — Pengecekan peralatan lokasi
